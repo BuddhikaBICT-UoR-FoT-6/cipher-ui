@@ -7,6 +7,8 @@
 import React, { useState, useEffect } from 'react';
 import AlgorithmInfo from './AlgorithmInfo';
 import SourceCodeViewer from './SourceCodeViewer';
+import CustomCipherBuilder from './CustomCipherBuilder';
+import Login from './Login';
 import './CipherApp.css';
 
 /**
@@ -28,6 +30,8 @@ const CipherApp = () => {
   const [rails, setRails] = useState(3);
   const [isProcessing, setIsProcessing] = useState(false);
   const [animateResult, setAnimateResult] = useState(false);
+  const [user, setUser] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
 
   const cipherAlgorithms = {
     caesar: {
@@ -149,6 +153,9 @@ const CipherApp = () => {
         
         return result;
       }
+    },
+    custom: {
+      name: 'Custom Cipher Builder'
     }
   };
 
@@ -246,18 +253,67 @@ const CipherApp = () => {
     }
   }, [animateResult]);
 
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+    if (token && savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+  }, []);
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+    setShowLogin(false);
+  };
+
+  const handleCloseLogin = () => {
+    setShowLogin(false);
+    setSelectedCipher('caesar'); // Reset to default cipher
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    if (selectedCipher === 'custom') {
+      setSelectedCipher('caesar');
+    }
+  };
+
+  const handleCipherChange = (cipher) => {
+    setSelectedCipher(cipher);
+  };
+
   return (
     <div className="cipher-app">
       <div className="header">
-        <h1 className="title">🔐 Cipher Algorithms</h1>
-        <p className="subtitle">Encrypt and decrypt text using classic cipher methods</p>
+        <div className="header-top">
+          <div className="header-content">
+            <h1 className="title">🔐 Cipher Algorithms</h1>
+            <p className="subtitle">Encrypt and decrypt text using classic cipher methods</p>
+          </div>
+          <div className="auth-section">
+            {user ? (
+              <div className="user-menu">
+                <span className="user-greeting">👤 {user.username || user.email}</span>
+                <button onClick={handleLogout} className="auth-btn logout-btn">
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setShowLogin(true)} className="auth-btn login-btn">
+                🔑 Login / Register
+              </button>
+            )}
+          </div>
+        </div>
       </div>
       
       <div className="card cipher-selector-card">
         <div className="cipher-selector">
           <label>🎯 Select Cipher Algorithm:</label>
           <div className="select-wrapper">
-            <select value={selectedCipher} onChange={(e) => setSelectedCipher(e.target.value)}>
+            <select value={selectedCipher} onChange={(e) => handleCipherChange(e.target.value)}>
               {Object.entries(cipherAlgorithms).map(([key, cipher]) => (
                 <option key={key} value={key}>{cipher.name}</option>
               ))}
@@ -266,23 +322,43 @@ const CipherApp = () => {
         </div>
       </div>
 
-      <AlgorithmInfo selectedCipher={selectedCipher} />
+      {selectedCipher !== 'custom' && (
+        <AlgorithmInfo selectedCipher={selectedCipher} />
+      )}
 
-      <SourceCodeViewer selectedCipher={selectedCipher} />
+      {selectedCipher !== 'custom' && (
+        <SourceCodeViewer selectedCipher={selectedCipher} />
+      )}
 
-      <div className="card input-card">
-        <div className="input-section">
-          <label>📝 Input Text:</label>
-          <textarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Enter your message here..."
-            className="input-textarea"
-          />
-        </div>
-      </div>
+      {selectedCipher === 'custom' ? (
+        user ? (
+          <CustomCipherBuilder />
+        ) : (
+          <div className="card login-prompt-card">
+            <div className="login-prompt">
+              <h3>🔐 Authentication Required</h3>
+              <p>Please login or register to access the Custom Cipher Builder feature.</p>
+              <button onClick={() => setShowLogin(true)} className="prompt-login-btn">
+                🔑 Login / Register
+              </button>
+            </div>
+          </div>
+        )
+      ) : (
+        <>
+          <div className="card input-card">
+            <div className="input-section">
+              <label>📝 Input Text:</label>
+              <textarea
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Enter your message here..."
+                className="input-textarea"
+              />
+            </div>
+          </div>
 
-      {(selectedCipher === 'caesar' || selectedCipher === 'vigenere' || selectedCipher === 'railfence') && (
+          {(selectedCipher === 'caesar' || selectedCipher === 'vigenere' || selectedCipher === 'railfence') && (
         <div className="card parameters-card">
           <label className="parameters-title">⚙️ Parameters:</label>
           <div className="parameters">
@@ -326,57 +402,61 @@ const CipherApp = () => {
                 />
               </div>
             )}
+            </div>
           </div>
-        </div>
-      )}
-
-      <div className="card buttons-card">
-        <div className="buttons">
-          <button 
-            onClick={handleEncrypt} 
-            disabled={isProcessing || !inputText.trim()}
-            className={`btn encrypt-btn ${isProcessing ? 'processing' : ''}`}
-          >
-            {isProcessing ? (
-              <><span className="spinner"></span> Processing...</>
-            ) : (
-              <>🔒 Encrypt</>
-            )}
-          </button>
-          <button 
-            onClick={handleDecrypt} 
-            disabled={isProcessing || !inputText.trim()}
-            className={`btn decrypt-btn ${isProcessing ? 'processing' : ''}`}
-          >
-            {isProcessing ? (
-              <><span className="spinner"></span> Processing...</>
-            ) : (
-              <>🔓 Decrypt</>
-            )}
-          </button>
-        </div>
-      </div>
-
-      <div className={`card output-card ${animateResult ? 'animate-result' : ''}`}>
-        <div className="output-section">
-          <label>✨ Output Result:</label>
-          <textarea
-            value={outputText}
-            readOnly
-            placeholder="Your encrypted/decrypted text will appear here..."
-            className="output-textarea"
-          />
-          {outputText && (
-            <button 
-              className="copy-btn"
-              onClick={() => navigator.clipboard.writeText(outputText)}
-              title="Copy to clipboard"
-            >
-              📋 Copy
-            </button>
           )}
-        </div>
-      </div>
+
+          <div className="card buttons-card">
+            <div className="buttons">
+              <button 
+                onClick={handleEncrypt} 
+                disabled={isProcessing || !inputText.trim()}
+                className={`btn encrypt-btn ${isProcessing ? 'processing' : ''}`}
+              >
+                {isProcessing ? (
+                  <><span className="spinner"></span> Processing...</>
+                ) : (
+                  <>🔒 Encrypt</>
+                )}
+              </button>
+              <button 
+                onClick={handleDecrypt} 
+                disabled={isProcessing || !inputText.trim()}
+                className={`btn decrypt-btn ${isProcessing ? 'processing' : ''}`}
+              >
+                {isProcessing ? (
+                  <><span className="spinner"></span> Processing...</>
+                ) : (
+                  <>🔓 Decrypt</>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className={`card output-card ${animateResult ? 'animate-result' : ''}`}>
+            <div className="output-section">
+              <label>✨ Output Result:</label>
+              <textarea
+                value={outputText}
+                readOnly
+                placeholder="Your encrypted/decrypted text will appear here..."
+                className="output-textarea"
+              />
+              {outputText && (
+                <button 
+                  className="copy-btn"
+                  onClick={() => navigator.clipboard.writeText(outputText)}
+                  title="Copy to clipboard"
+                >
+                  📋 Copy
+                </button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+      
+      {showLogin && <Login onLogin={handleLogin} onClose={handleCloseLogin} />}
     </div>
   );
 };
