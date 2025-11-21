@@ -1,8 +1,24 @@
+/**
+ * @fileoverview Main cipher application component with encryption/decryption functionality
+ * @author Cipher Project Team
+ * @version 1.0.0
+ */
+
 import React, { useState, useEffect } from 'react';
 import AlgorithmInfo from './AlgorithmInfo';
 import SourceCodeViewer from './SourceCodeViewer';
 import './CipherApp.css';
 
+/**
+ * Main cipher application component
+ * @component
+ * @description Provides UI for encrypting and decrypting text using various cipher algorithms including Caesar, ROT13, Atbash, Vigenère, and Rail Fence ciphers
+ * @returns {JSX.Element} The main cipher application interface with theme support and animations
+ * 
+ * @example
+ * // Usage in App.js
+ * <CipherApp />
+ */
 const CipherApp = () => {
   const [selectedCipher, setSelectedCipher] = useState('caesar');
   const [inputText, setInputText] = useState('');
@@ -136,6 +152,14 @@ const CipherApp = () => {
     }
   };
 
+  /**
+   * Encrypts input text using selected cipher algorithm
+   * @async
+   * @function handleEncrypt
+   * @description Processes text encryption with visual feedback, animations, and parameter validation
+   * @returns {Promise<void>} Promise that resolves when encryption is complete
+   * @throws {Error} When invalid parameters are provided for specific ciphers
+   */
   const handleEncrypt = async () => {
     setIsProcessing(true);
     setAnimateResult(false);
@@ -168,6 +192,14 @@ const CipherApp = () => {
     setAnimateResult(true);
   };
 
+  /**
+   * Decrypts input text using selected cipher algorithm
+   * @async
+   * @function handleDecrypt
+   * @description Processes text decryption with visual feedback, animations, and parameter validation
+   * @returns {Promise<void>} Promise that resolves when decryption is complete
+   * @throws {Error} When invalid parameters are provided for specific ciphers
+   */
   const handleDecrypt = async () => {
     setIsProcessing(true);
     setAnimateResult(false);
@@ -200,6 +232,13 @@ const CipherApp = () => {
     setAnimateResult(true);
   };
 
+  /**
+   * Effect hook to manage result animation timing
+   * @function useEffect
+   * @description Automatically removes animation class after 1 second to reset animation state
+   * @param {Function} callback - Cleanup function for animation timer
+   * @param {Array} dependencies - Dependencies array containing animateResult state
+   */
   useEffect(() => {
     if (animateResult) {
       const timer = setTimeout(() => setAnimateResult(false), 1000);

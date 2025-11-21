@@ -1,9 +1,42 @@
+/**
+ * @fileoverview Component for displaying and managing Java source code for cipher algorithms
+ * @author Cipher Project Team
+ * @version 1.0.0
+ */
+
 import React, { useState } from 'react';
 import './SourceCodeViewer.css';
 
+/**
+ * Source code viewer component with collapsible interface
+ * @component
+ * @param {Object} props - Component properties
+ * @param {string} props.selectedCipher - Currently selected cipher algorithm key
+ * @description Displays Java source code for cipher algorithms with syntax highlighting, copy functionality, and expandable interface
+ * @returns {JSX.Element} Collapsible source code viewer with copy-to-clipboard functionality
+ * 
+ * @example
+ * <SourceCodeViewer selectedCipher="caesar" />
+ * <SourceCodeViewer selectedCipher="vigenere" />
+ */
 const SourceCodeViewer = ({ selectedCipher }) => {
+  /**
+   * State for controlling the expanded/collapsed state of the code viewer
+   * @type {boolean}
+   * @default false
+   */
   const [isExpanded, setIsExpanded] = useState(false);
 
+  /**
+   * Java source code database for all cipher algorithms
+   * @constant {Object} sourceCode
+   * @description Contains complete Java implementation source code for each cipher algorithm
+   * @property {string} caesar - Caesar cipher Java source code
+   * @property {string} rot13 - ROT13 cipher Java source code
+   * @property {string} atbash - Atbash cipher Java source code
+   * @property {string} vigenere - Vigenère cipher Java source code
+   * @property {string} railfence - Rail Fence cipher Java source code
+   */
   const sourceCode = {
     caesar: `public class CaesarCipher {
     
@@ -205,6 +238,12 @@ const SourceCodeViewer = ({ selectedCipher }) => {
 }`
   };
 
+  /**
+   * Copies the current cipher's source code to clipboard
+   * @function handleCopyCode
+   * @description Uses the Clipboard API to copy Java source code to user's clipboard
+   * @returns {void}
+   */
   const handleCopyCode = () => {
     navigator.clipboard.writeText(sourceCode[selectedCipher]);
   };

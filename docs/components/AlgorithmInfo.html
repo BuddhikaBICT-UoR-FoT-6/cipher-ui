@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>AlgorithmInfo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #2c3e50;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        h2 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 4px solid #667eea;
+            margin: 0;
+            padding-left: 20px;
+            color: #666;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 style="color: white; border: none; margin: 0;">AlgorithmInfo</h1>
+        <p style="margin: 10px 0 0 0;">Cipher Project Documentation</p>
+    </div>
+    <h1>AlgorithmInfo Documentation</h1><br><br><h2>Overview</h2><br>Component displaying detailed information about cipher algorithms<br><br><h2>Project Information</h2><br>- <strong>Project:</strong> Cipher Algorithms Implementation<br>- <strong>Version:</strong> 1.0.0<br>- <strong>Author:</strong> Cipher Project Team<br>- <strong>File:</strong> <code>src/AlgorithmInfo.js</code><br><br>---<br><br><h2>Constants</h2><br><br><dl><br><dt><a href="#algorithmDetails">algorithmDetails</a> : <code>Object</code></dt><br><dd><p>Contains detailed information for each cipher including icons, descriptions, complexity ratings, security levels, historical data, and key space analysis</p><br></dd><br></dl><br><br><h2>Functions</h2><br><br><dl><br><dt><a href="#AlgorithmInfo">AlgorithmInfo(props)</a> ⇒ <code>JSX.Element</code></dt><br><dd><p>Shows algorithm details including complexity, security level, historical information, and key space analysis</p><br></dd><br></dl><br><br><a name="algorithmDetails"></a><br><br><h2>algorithmDetails : <code>Object</code></h2><br>Contains detailed information for each cipher including icons, descriptions, complexity ratings, security levels, historical data, and key space analysis<br><br><strong>Kind</strong>: global constant  <br><strong>Properties</strong><br><br>| Name | Type | Description |<br>| --- | --- | --- |<br>| caesar | <code>Object</code> | Caesar cipher information |<br>| rot13 | <code>Object</code> | ROT13 cipher information |<br>| atbash | <code>Object</code> | Atbash cipher information |<br>| vigenere | <code>Object</code> | Vigenère cipher information |<br>| railfence | <code>Object</code> | Rail Fence cipher information |<br><br><a name="AlgorithmInfo"></a><br><br><h2>AlgorithmInfo(props) ⇒ <code>JSX.Element</code></h2><br>Shows algorithm details including complexity, security level, historical information, and key space analysis<br><br><strong>Kind</strong>: global function  <br><strong>Returns</strong>: <code>JSX.Element</code> - Algorithm information panel with animated entrance and hover effects  <br><strong>Component</strong>:   <br><br>| Param | Type | Description |<br>| --- | --- | --- |<br>| props | <code>Object</code> | Component properties |<br>| props.selectedCipher | <code>string</code> | Currently selected cipher algorithm key (caesar|rot13|atbash|vigenere|railfence) |<br><br><strong>Example</strong>  <br><pre><code>js<br><AlgorithmInfo selectedCipher="caesar" /><br><AlgorithmInfo selectedCipher="vigenere" /><br></code></pre><br><br><br>---<br><br><h2>Usage in Project</h2><br>This component is part of the Cipher Project React application that provides a user interface for various encryption and decryption algorithms including Caesar, ROT13, Atbash, Vigenère, and Rail Fence ciphers.<br><br><h2>Related Components</h2><br>- CipherApp<br>- SourceCodeViewer<br>- ThemeToggle<br>- ThemeContext<br>
+    <div class="footer">
+        <p>Generated on 11/21/2025 | Cipher Project v1.0.0</p>
+    </div>
+</body>
+</html>

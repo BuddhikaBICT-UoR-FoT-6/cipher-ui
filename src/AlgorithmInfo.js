@@ -1,7 +1,35 @@
+/**
+ * @fileoverview Component displaying detailed information about cipher algorithms
+ * @author Cipher Project Team
+ * @version 1.0.0
+ */
+
 import React from 'react';
 import './AlgorithmInfo.css';
 
+/**
+ * Algorithm information display component
+ * @component
+ * @param {Object} props - Component properties
+ * @param {string} props.selectedCipher - Currently selected cipher algorithm key (caesar|rot13|atbash|vigenere|railfence)
+ * @description Shows algorithm details including complexity, security level, historical information, and key space analysis
+ * @returns {JSX.Element} Algorithm information panel with animated entrance and hover effects
+ * 
+ * @example
+ * <AlgorithmInfo selectedCipher="caesar" />
+ * <AlgorithmInfo selectedCipher="vigenere" />
+ */
 const AlgorithmInfo = ({ selectedCipher }) => {
+  /**
+   * Comprehensive algorithm information database
+   * @constant {Object} algorithmDetails
+   * @description Contains detailed information for each cipher including icons, descriptions, complexity ratings, security levels, historical data, and key space analysis
+   * @property {Object} caesar - Caesar cipher information
+   * @property {Object} rot13 - ROT13 cipher information
+   * @property {Object} atbash - Atbash cipher information
+   * @property {Object} vigenere - Vigenère cipher information
+   * @property {Object} railfence - Rail Fence cipher information
+   */
   const algorithmDetails = {
     caesar: {
       icon: '🏛️',

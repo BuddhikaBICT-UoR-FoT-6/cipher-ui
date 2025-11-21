@@ -16,7 +16,12 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "docs:generate": "node docs/generate-docs.js",
+    "docs:jsdoc": "jsdoc -c jsdoc.conf.json",
+    "docs:markdown": "jsdoc2md src/**/*.js > docs/API-Documentation.md",
+    "docs:html": "node docs/convert-to-pdf.js",
+    "docs:all": "npm run docs:generate && npm run docs:html"
   },
   "eslintConfig": {
     "extends": [
@@ -35,5 +40,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "jsdoc": "^4.0.5",
+    "jsdoc-to-markdown": "^9.1.3"
   }
 }
