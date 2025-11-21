@@ -32,6 +32,7 @@
 }
 
 .login-btn,
+.admin-btn,
 .logout-btn {
   padding: 8px 16px;
   border: none;
@@ -50,6 +51,16 @@
 
 .login-btn:hover {
   background: rgba(78, 205, 196, 1);
+  transform: translateY(-2px);
+}
+
+.admin-btn {
+  background: rgba(255, 193, 7, 0.9);
+  color: white;
+}
+
+.admin-btn:hover {
+  background: rgba(255, 193, 7, 1);
   transform: translateY(-2px);
 }
 
@@ -141,6 +152,7 @@
   }
   
   .login-btn,
+  .admin-btn,
   .logout-btn {
     font-size: 12px;
     padding: 6px 12px;

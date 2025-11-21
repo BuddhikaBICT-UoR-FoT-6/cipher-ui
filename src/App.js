@@ -3,10 +3,12 @@ import { ThemeProvider } from './ThemeContext';
 import CipherApp from './CipherApp';
 import ThemeToggle from './ThemeToggle';
 import Login from './Login';
+import AdminDashboard from './AdminDashboard';
 
 function App() {
   const [user, setUser] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -34,12 +36,19 @@ function App() {
           user={user}
           onShowLogin={() => setShowLogin(true)}
           onLogout={handleLogout}
+          onShowAdmin={() => setShowAdmin(true)}
         />
         <CipherApp user={user} onShowLogin={() => setShowLogin(true)} />
         {showLogin && (
           <Login 
             onLogin={handleLogin} 
             onClose={() => setShowLogin(false)} 
+          />
+        )}
+        {showAdmin && user?.role === 'admin' && (
+          <AdminDashboard 
+            user={user}
+            onClose={() => setShowAdmin(false)}
           />
         )}
       </div>
