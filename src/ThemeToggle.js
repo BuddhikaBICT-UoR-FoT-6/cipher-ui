@@ -22,6 +22,7 @@ const ThemeToggle = ({ user, onShowLogin, onLogout, onShowAdmin }) => {
       {user ? (
         <div className="user-controls">
           <span className="user-name">👤 {user.username || user.email}</span>
+
           {user.role === 'admin' && (
             <button className="admin-btn" onClick={onShowAdmin}>
               🛡️ Admin

@@ -8,6 +8,7 @@ import React, { useState, useEffect } from 'react';
 import AlgorithmInfo from './AlgorithmInfo';
 import SourceCodeViewer from './SourceCodeViewer';
 import CustomCipherBuilder from './CustomCipherBuilder';
+import BruteForceSimulator from './BruteForceSimulator';
 import Login from './Login';
 import './CipherApp.css';
 
@@ -30,6 +31,7 @@ const CipherApp = ({ user, onShowLogin }) => {
   const [rails, setRails] = useState(3);
   const [isProcessing, setIsProcessing] = useState(false);
   const [animateResult, setAnimateResult] = useState(false);
+  const [showBruteForce, setShowBruteForce] = useState(false);
 
   const cipherAlgorithms = {
     caesar: {
@@ -409,7 +411,20 @@ const CipherApp = ({ user, onShowLogin }) => {
         </>
       )}
       
-
+      {selectedCipher !== 'custom' && (
+        <button 
+          className="floating-brute-force-btn"
+          onClick={() => setShowBruteForce(true)}
+          title="Analyze cipher security"
+        >
+          🔓
+        </button>
+      )}
+      
+      <BruteForceSimulator 
+        isVisible={showBruteForce}
+        onClose={() => setShowBruteForce(false)}
+      />
     </div>
   );
 };

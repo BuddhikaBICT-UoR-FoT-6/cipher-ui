@@ -33,6 +33,7 @@
 
 .login-btn,
 .admin-btn,
+.dashboard-btn,
 .logout-btn {
   padding: 8px 16px;
   border: none;
@@ -61,6 +62,16 @@
 
 .admin-btn:hover {
   background: rgba(255, 193, 7, 1);
+  transform: translateY(-2px);
+}
+
+.dashboard-btn {
+  background: rgba(52, 152, 219, 0.9);
+  color: white;
+}
+
+.dashboard-btn:hover {
+  background: rgba(52, 152, 219, 1);
   transform: translateY(-2px);
 }
 
@@ -153,6 +164,7 @@
   
   .login-btn,
   .admin-btn,
+  .dashboard-btn,
   .logout-btn {
     font-size: 12px;
     padding: 6px 12px;
