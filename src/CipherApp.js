@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import AlgorithmInfo from './AlgorithmInfo';
+import SourceCodeViewer from './SourceCodeViewer';
 import './CipherApp.css';
 
 const CipherApp = () => {
@@ -224,6 +226,10 @@ const CipherApp = () => {
           </div>
         </div>
       </div>
+
+      <AlgorithmInfo selectedCipher={selectedCipher} />
+
+      <SourceCodeViewer selectedCipher={selectedCipher} />
 
       <div className="card input-card">
         <div className="input-section">
