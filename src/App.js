@@ -1,13 +1,47 @@
+import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from './ThemeContext';
 import CipherApp from './CipherApp';
 import ThemeToggle from './ThemeToggle';
+import Login from './Login';
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const savedUser = localStorage.getItem('user');
+    if (token && savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+  }, []);
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+    setShowLogin(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+  };
+
   return (
     <ThemeProvider>
       <div className="App">
-        <ThemeToggle />
-        <CipherApp />
+        <ThemeToggle 
+          user={user}
+          onShowLogin={() => setShowLogin(true)}
+          onLogout={handleLogout}
+        />
+        <CipherApp user={user} onShowLogin={() => setShowLogin(true)} />
+        {showLogin && (
+          <Login 
+            onLogin={handleLogin} 
+            onClose={() => setShowLogin(false)} 
+          />
+        )}
       </div>
     </ThemeProvider>
   );

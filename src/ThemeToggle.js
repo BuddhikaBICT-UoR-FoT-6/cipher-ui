@@ -9,33 +9,39 @@ import { useTheme } from './ThemeContext';
 import './ThemeToggle.css';
 
 /**
- * Theme toggle button component
+ * Theme toggle and auth controls component
  * @component
- * @description Provides a toggle switch for switching between light (purple) and dark (black) themes with smooth animations
- * @returns {JSX.Element} Animated toggle button with theme icons
- * 
- * @example
- * <ThemeToggle />
+ * @description Provides theme toggle and authentication controls in top-right corner
+ * @returns {JSX.Element} Theme toggle and auth buttons
  */
-const ThemeToggle = () => {
-  /**
-   * Theme context hook providing current theme state and toggle function
-   * @type {Object}
-   * @property {boolean} isDark - Current theme state (true for dark, false for light)
-   * @property {Function} toggleTheme - Function to toggle between themes
-   */
+const ThemeToggle = ({ user, onShowLogin, onLogout }) => {
   const { isDark, toggleTheme } = useTheme();
 
   return (
-    <button className="theme-toggle" onClick={toggleTheme} title={`Switch to ${isDark ? 'light' : 'dark'} mode`}>
-      <div className="toggle-track">
-        <div className={`toggle-thumb ${isDark ? 'dark' : 'light'}`}>
-          <span className="toggle-icon">
-            {isDark ? '🌙' : '☀️'}
-          </span>
+    <div className="top-controls">
+      {user ? (
+        <div className="user-controls">
+          <span className="user-name">👤 {user.username || user.email}</span>
+          <button className="logout-btn" onClick={onLogout}>
+            Logout
+          </button>
         </div>
-      </div>
-    </button>
+      ) : (
+        <button className="login-btn" onClick={onShowLogin}>
+          🔑 Login
+        </button>
+      )}
+      
+      <button className="theme-toggle" onClick={toggleTheme} title={`Switch to ${isDark ? 'light' : 'dark'} mode`}>
+        <div className="toggle-track">
+          <div className={`toggle-thumb ${isDark ? 'dark' : 'light'}`}>
+            <span className="toggle-icon">
+              {isDark ? '🌙' : '☀️'}
+            </span>
+          </div>
+        </div>
+      </button>
+    </div>
   );
 };
 

@@ -21,7 +21,7 @@ import './CipherApp.css';
  * // Usage in App.js
  * <CipherApp />
  */
-const CipherApp = () => {
+const CipherApp = ({ user, onShowLogin }) => {
   const [selectedCipher, setSelectedCipher] = useState('caesar');
   const [inputText, setInputText] = useState('');
   const [outputText, setOutputText] = useState('');
@@ -30,8 +30,6 @@ const CipherApp = () => {
   const [rails, setRails] = useState(3);
   const [isProcessing, setIsProcessing] = useState(false);
   const [animateResult, setAnimateResult] = useState(false);
-  const [user, setUser] = useState(null);
-  const [showLogin, setShowLogin] = useState(false);
 
   const cipherAlgorithms = {
     caesar: {
@@ -253,33 +251,6 @@ const CipherApp = () => {
     }
   }, [animateResult]);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
-    if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-  }, []);
-
-  const handleLogin = (userData) => {
-    setUser(userData);
-    setShowLogin(false);
-  };
-
-  const handleCloseLogin = () => {
-    setShowLogin(false);
-    setSelectedCipher('caesar'); // Reset to default cipher
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    if (selectedCipher === 'custom') {
-      setSelectedCipher('caesar');
-    }
-  };
-
   const handleCipherChange = (cipher) => {
     setSelectedCipher(cipher);
   };
@@ -287,26 +258,8 @@ const CipherApp = () => {
   return (
     <div className="cipher-app">
       <div className="header">
-        <div className="header-top">
-          <div className="header-content">
-            <h1 className="title">🔐 Cipher Algorithms</h1>
-            <p className="subtitle">Encrypt and decrypt text using classic cipher methods</p>
-          </div>
-          <div className="auth-section">
-            {user ? (
-              <div className="user-menu">
-                <span className="user-greeting">👤 {user.username || user.email}</span>
-                <button onClick={handleLogout} className="auth-btn logout-btn">
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => setShowLogin(true)} className="auth-btn login-btn">
-                🔑 Login / Register
-              </button>
-            )}
-          </div>
-        </div>
+        <h1 className="title">🔐 Cipher Algorithms</h1>
+        <p className="subtitle">Encrypt and decrypt text using classic cipher methods</p>
       </div>
       
       <div className="card cipher-selector-card">
@@ -338,7 +291,7 @@ const CipherApp = () => {
             <div className="login-prompt">
               <h3>🔐 Authentication Required</h3>
               <p>Please login or register to access the Custom Cipher Builder feature.</p>
-              <button onClick={() => setShowLogin(true)} className="prompt-login-btn">
+              <button onClick={onShowLogin} className="prompt-login-btn">
                 🔑 Login / Register
               </button>
             </div>
@@ -456,7 +409,7 @@ const CipherApp = () => {
         </>
       )}
       
-      {showLogin && <Login onLogin={handleLogin} onClose={handleCloseLogin} />}
+
     </div>
   );
 };

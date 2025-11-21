@@ -23,25 +23,9 @@
 }
 
 .header {
+  text-align: center;
   margin-bottom: 40px;
   animation: slideDown 0.6s ease-out;
-}
-
-.header-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-}
-
-.header-content {
-  text-align: center;
-  flex: 1;
-}
-
-.auth-section {
-  display: flex;
-  align-items: center;
 }
 
 @keyframes slideDown {
@@ -83,54 +67,7 @@
   opacity: 0.9;
 }
 
-.user-menu {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
 
-.user-greeting {
-  color: #ffffff;
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-.dark-theme .user-greeting {
-  color: #ffffff;
-}
-
-.auth-btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-}
-
-.login-btn {
-  background: linear-gradient(135deg, #4ecdc4, #44a08d);
-  color: white;
-  box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
-}
-
-.login-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(78, 205, 196, 0.4);
-}
-
-.logout-btn {
-  background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-  color: white;
-  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-}
-
-.logout-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
-}
 
 .login-prompt-card {
   animation-delay: 0.2s;
@@ -554,23 +491,6 @@ select:focus {
 @media (max-width: 768px) {
   .cipher-app {
     padding: 15px;
-  }
-  
-  .header-top {
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .user-menu {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
-  }
-  
-  .user-info {
-    flex-direction: column;
-    gap: 10px;
-    text-align: center;
   }
   
   .title {
