@@ -2,12 +2,7 @@
   box-sizing: border-box;
 }
 
-body {
-  margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-}
+
 
 .cipher-app {
   max-width: 900px;
@@ -84,6 +79,12 @@ body {
   animation: slideUp 0.6s ease-out;
 }
 
+.dark-theme .card {
+  background: rgba(44, 62, 80, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -98,6 +99,10 @@ body {
 .card:hover {
   transform: translateY(-5px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.dark-theme .card:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
 }
 
 .cipher-selector-card {
@@ -131,6 +136,13 @@ body {
   color: #2c3e50;
 }
 
+.dark-theme .cipher-selector label,
+.dark-theme .input-section label,
+.dark-theme .output-section label,
+.dark-theme .parameters-title {
+  color: #ffffff;
+}
+
 .select-wrapper {
   position: relative;
 }
@@ -146,6 +158,10 @@ body {
   font-size: 0.8rem;
 }
 
+.dark-theme .select-wrapper::after {
+  color: #ffffff;
+}
+
 select {
   width: 100%;
   padding: 15px 20px;
@@ -158,10 +174,20 @@ select {
   transition: all 0.3s ease;
 }
 
+.dark-theme select {
+  background: rgba(52, 73, 94, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
 select:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.dark-theme select:focus {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
 }
 
 .input-textarea,
@@ -178,6 +204,13 @@ select:focus {
   background: #fafbfc;
 }
 
+.dark-theme .input-textarea,
+.dark-theme .output-textarea {
+  background: rgba(52, 73, 94, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
 .input-textarea:focus {
   outline: none;
   border-color: #667eea;
@@ -185,10 +218,20 @@ select:focus {
   background: white;
 }
 
+.dark-theme .input-textarea:focus {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+  background: rgba(52, 73, 94, 0.9);
+}
+
 .output-textarea {
   background: #f8f9fa;
   color: #2c3e50;
   font-weight: 500;
+}
+
+.dark-theme .output-textarea {
+  background: rgba(44, 62, 80, 0.8);
+  color: #ffffff;
 }
 
 .parameters {
@@ -210,6 +253,10 @@ select:focus {
   font-size: 0.95rem;
 }
 
+.dark-theme .parameter-group label {
+  color: #ffffff;
+}
+
 .parameter-input {
   padding: 12px 15px;
   border: 2px solid #e1e8ed;
@@ -218,10 +265,20 @@ select:focus {
   transition: all 0.3s ease;
 }
 
+.dark-theme .parameter-input {
+  background: rgba(52, 73, 94, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
 .parameter-input:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.dark-theme .parameter-input:focus {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
 }
 
 .buttons {

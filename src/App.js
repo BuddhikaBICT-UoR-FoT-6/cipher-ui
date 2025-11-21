@@ -1,10 +1,15 @@
+import { ThemeProvider } from './ThemeContext';
 import CipherApp from './CipherApp';
+import ThemeToggle from './ThemeToggle';
 
 function App() {
   return (
-    <div className="App">
-      <CipherApp />
-    </div>
+    <ThemeProvider>
+      <div className="App">
+        <ThemeToggle />
+        <CipherApp />
+      </div>
+    </ThemeProvider>
   );
 }
 
