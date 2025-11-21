@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { showToast } from './Toast';
 import './Login.css';
 
 const Login = ({ onLogin, onClose }) => {
@@ -31,12 +32,17 @@ const Login = ({ onLogin, onClose }) => {
       if (response.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        showToast(isLogin ? 'Login successful!' : 'Registration successful! Welcome!', 'success');
         onLogin(data.user);
       } else {
-        setError(data.message || 'Authentication failed');
+        const errorMsg = data.message || 'Authentication failed';
+        setError(errorMsg);
+        showToast(errorMsg, 'error');
       }
     } catch (err) {
-      setError('Connection error. Please try again.');
+      const errorMsg = 'Connection error. Please try again.';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
     } finally {
       setLoading(false);
     }

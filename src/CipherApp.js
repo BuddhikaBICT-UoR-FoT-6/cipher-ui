@@ -9,6 +9,7 @@ import AlgorithmInfo from './AlgorithmInfo';
 import SourceCodeViewer from './SourceCodeViewer';
 import CustomCipherBuilder from './CustomCipherBuilder';
 import BruteForceSimulator from './BruteForceSimulator';
+import { showToast } from './Toast';
 import Login from './Login';
 import './CipherApp.css';
 
@@ -32,6 +33,8 @@ const CipherApp = ({ user, onShowLogin }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [animateResult, setAnimateResult] = useState(false);
   const [showBruteForce, setShowBruteForce] = useState(false);
+  const [customCipherMapping, setCustomCipherMapping] = useState({});
+  const [customCipherName, setCustomCipherName] = useState('My Custom Cipher');
 
   const cipherAlgorithms = {
     caesar: {
@@ -168,35 +171,61 @@ const CipherApp = ({ user, onShowLogin }) => {
    * @throws {Error} When invalid parameters are provided for specific ciphers
    */
   const handleEncrypt = async () => {
-    setIsProcessing(true);
-    setAnimateResult(false);
-    
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const cipher = cipherAlgorithms[selectedCipher];
-    let result = '';
-    
-    switch (selectedCipher) {
-      case 'caesar':
-        result = cipher.encrypt(inputText, parseInt(shift));
-        break;
-      case 'rot13':
-      case 'atbash':
-        result = cipher.encode(inputText);
-        break;
-      case 'vigenere':
-        result = cipher.encrypt(inputText, key);
-        break;
-      case 'railfence':
-        result = cipher.encrypt(inputText, parseInt(rails));
-        break;
-      default:
-        result = inputText;
+    try {
+      if (!inputText.trim()) {
+        showToast('Please enter text to encrypt', 'warning');
+        return;
+      }
+      
+      if (selectedCipher === 'vigenere' && !key.trim()) {
+        showToast('Please enter a keyword for Vigenère cipher', 'warning');
+        return;
+      }
+      
+      setIsProcessing(true);
+      setAnimateResult(false);
+      
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const cipher = cipherAlgorithms[selectedCipher];
+      let result = '';
+      
+      switch (selectedCipher) {
+        case 'caesar':
+          if (shift < 1 || shift > 25) {
+            showToast('Shift value must be between 1 and 25', 'warning');
+            setIsProcessing(false);
+            return;
+          }
+          result = cipher.encrypt(inputText, parseInt(shift));
+          break;
+        case 'rot13':
+        case 'atbash':
+          result = cipher.encode(inputText);
+          break;
+        case 'vigenere':
+          result = cipher.encrypt(inputText, key);
+          break;
+        case 'railfence':
+          if (rails < 2 || rails > 10) {
+            showToast('Number of rails must be between 2 and 10', 'warning');
+            setIsProcessing(false);
+            return;
+          }
+          result = cipher.encrypt(inputText, parseInt(rails));
+          break;
+        default:
+          result = inputText;
+      }
+      
+      setOutputText(result);
+      setIsProcessing(false);
+      setAnimateResult(true);
+      showToast(`Text encrypted using ${cipher.name}`, 'success');
+    } catch (error) {
+      setIsProcessing(false);
+      showToast('Encryption failed. Please try again.', 'error');
     }
-    
-    setOutputText(result);
-    setIsProcessing(false);
-    setAnimateResult(true);
   };
 
   /**
@@ -208,35 +237,61 @@ const CipherApp = ({ user, onShowLogin }) => {
    * @throws {Error} When invalid parameters are provided for specific ciphers
    */
   const handleDecrypt = async () => {
-    setIsProcessing(true);
-    setAnimateResult(false);
-    
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const cipher = cipherAlgorithms[selectedCipher];
-    let result = '';
-    
-    switch (selectedCipher) {
-      case 'caesar':
-        result = cipher.decrypt(inputText, parseInt(shift));
-        break;
-      case 'rot13':
-      case 'atbash':
-        result = cipher.encode(inputText);
-        break;
-      case 'vigenere':
-        result = cipher.decrypt(inputText, key);
-        break;
-      case 'railfence':
-        result = cipher.decrypt(inputText, parseInt(rails));
-        break;
-      default:
-        result = inputText;
+    try {
+      if (!inputText.trim()) {
+        showToast('Please enter text to decrypt', 'warning');
+        return;
+      }
+      
+      if (selectedCipher === 'vigenere' && !key.trim()) {
+        showToast('Please enter a keyword for Vigenère cipher', 'warning');
+        return;
+      }
+      
+      setIsProcessing(true);
+      setAnimateResult(false);
+      
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const cipher = cipherAlgorithms[selectedCipher];
+      let result = '';
+      
+      switch (selectedCipher) {
+        case 'caesar':
+          if (shift < 1 || shift > 25) {
+            showToast('Shift value must be between 1 and 25', 'warning');
+            setIsProcessing(false);
+            return;
+          }
+          result = cipher.decrypt(inputText, parseInt(shift));
+          break;
+        case 'rot13':
+        case 'atbash':
+          result = cipher.encode(inputText);
+          break;
+        case 'vigenere':
+          result = cipher.decrypt(inputText, key);
+          break;
+        case 'railfence':
+          if (rails < 2 || rails > 10) {
+            showToast('Number of rails must be between 2 and 10', 'warning');
+            setIsProcessing(false);
+            return;
+          }
+          result = cipher.decrypt(inputText, parseInt(rails));
+          break;
+        default:
+          result = inputText;
+      }
+      
+      setOutputText(result);
+      setIsProcessing(false);
+      setAnimateResult(true);
+      showToast(`Text decrypted using ${cipher.name}`, 'success');
+    } catch (error) {
+      setIsProcessing(false);
+      showToast('Decryption failed. Please try again.', 'error');
     }
-    
-    setOutputText(result);
-    setIsProcessing(false);
-    setAnimateResult(true);
   };
 
   /**
@@ -287,7 +342,10 @@ const CipherApp = ({ user, onShowLogin }) => {
 
       {selectedCipher === 'custom' ? (
         user ? (
-          <CustomCipherBuilder />
+          <CustomCipherBuilder 
+            onMappingChange={setCustomCipherMapping}
+            onNameChange={setCustomCipherName}
+          />
         ) : (
           <div className="card login-prompt-card">
             <div className="login-prompt">
@@ -400,7 +458,10 @@ const CipherApp = ({ user, onShowLogin }) => {
               {outputText && (
                 <button 
                   className="copy-btn"
-                  onClick={() => navigator.clipboard.writeText(outputText)}
+                  onClick={() => {
+                    navigator.clipboard.writeText(outputText);
+                    showToast('Text copied to clipboard!', 'success');
+                  }}
                   title="Copy to clipboard"
                 >
                   📋 Copy
@@ -411,7 +472,7 @@ const CipherApp = ({ user, onShowLogin }) => {
         </>
       )}
       
-      {selectedCipher !== 'custom' && (
+      {selectedCipher === 'custom' && (
         <button 
           className="floating-brute-force-btn"
           onClick={() => setShowBruteForce(true)}
@@ -424,6 +485,10 @@ const CipherApp = ({ user, onShowLogin }) => {
       <BruteForceSimulator 
         isVisible={showBruteForce}
         onClose={() => setShowBruteForce(false)}
+        customCipherData={selectedCipher === 'custom' ? { 
+          name: customCipherName, 
+          mapping: customCipherMapping 
+        } : null}
       />
     </div>
   );

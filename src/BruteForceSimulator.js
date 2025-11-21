@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './BruteForceSimulator.css';
 
-const BruteForceSimulator = ({ isVisible, onClose }) => {
-  const [selectedCipher, setSelectedCipher] = useState('caesar');
+const BruteForceSimulator = ({ isVisible, onClose, customCipherData }) => {
   const [textLength, setTextLength] = useState(10);
   const [results, setResults] = useState(null);
 
@@ -35,16 +34,35 @@ const BruteForceSimulator = ({ isVisible, onClose }) => {
   };
 
   const calculateCrackTime = () => {
-    const cipher = cipherComplexity[selectedCipher];
     let keySpace;
+    let cipherName = 'Custom Substitution Cipher';
+    let description = 'Brute force requires trying all possible alphabet mappings';
     
-    if (selectedCipher === 'vigenere') {
-      const avgKeyLength = 5;
-      keySpace = cipher.keySpace(avgKeyLength);
-    } else if (selectedCipher === 'railfence') {
-      keySpace = cipher.keySpace(textLength);
+    if (customCipherData && customCipherData.mapping && Object.keys(customCipherData.mapping).length > 0) {
+      const mappingEntries = Object.keys(customCipherData.mapping).length;
+      const mappingValues = Object.values(customCipherData.mapping);
+      const uniqueMappings = new Set(mappingValues.filter(v => v && v !== '')).size;
+      
+      // Count non-identity mappings (where letter maps to different letter)
+      const nonIdentityMappings = Object.entries(customCipherData.mapping)
+        .filter(([key, value]) => key !== value).length;
+      
+      if (nonIdentityMappings === 0) {
+        keySpace = 1; // Identity mapping - no encryption
+        description = 'Identity mapping (no encryption)';
+      } else if (mappingEntries === 26 && uniqueMappings === 26) {
+        keySpace = 403291461126605635584000000; // Full 26!
+        description = `Complete substitution: all 26 letters uniquely mapped`;
+      } else {
+        keySpace = Math.pow(uniqueMappings, nonIdentityMappings);
+        description = `Partial substitution: ${nonIdentityMappings} letters changed, ${uniqueMappings} possible targets`;
+      }
+      
+      cipherName = customCipherData.name || 'Custom Cipher';
     } else {
-      keySpace = cipher.keySpace;
+      keySpace = 1;
+      cipherName = 'No Custom Cipher';
+      description = 'No cipher mapping defined';
     }
 
     // Assumptions: 1M attempts per second, average case is 50% of keyspace
@@ -62,14 +80,14 @@ const BruteForceSimulator = ({ isVisible, onClose }) => {
     };
 
     setResults({
-      cipher: cipher.name,
+      cipher: cipherName,
       keySpace,
       averageAttempts,
       timeTocrack: formatTime(seconds),
-      security: seconds < 1 ? 'Very Weak' : 
-               seconds < 3600 ? 'Weak' : 
-               seconds < 86400 ? 'Moderate' : 'Strong',
-      description: cipher.description
+      security: seconds < 31536000 ? 'Moderate' : 
+               seconds < 31536000000 ? 'Strong' : 
+               seconds < 31536000000000 ? 'Very Strong' : 'Extremely Strong',
+      description
     });
   };
 
@@ -77,7 +95,7 @@ const BruteForceSimulator = ({ isVisible, onClose }) => {
     if (isVisible) {
       calculateCrackTime();
     }
-  }, [selectedCipher, textLength, isVisible]);
+  }, [textLength, isVisible, customCipherData?.mapping, customCipherData?.name]);
 
   if (!isVisible) return null;
 
@@ -91,14 +109,11 @@ const BruteForceSimulator = ({ isVisible, onClose }) => {
 
         <div className="simulator-controls">
           <div className="control-group">
-            <label>Cipher Type:</label>
-            <select value={selectedCipher} onChange={(e) => setSelectedCipher(e.target.value)}>
-              <option value="caesar">Caesar Cipher</option>
-              <option value="rot13">ROT13</option>
-              <option value="atbash">Atbash Cipher</option>
-              <option value="vigenere">Vigenère Cipher</option>
-              <option value="railfence">Rail Fence Cipher</option>
-            </select>
+            <label>Cipher Analysis:</label>
+            <div className="cipher-info">
+              <strong>{customCipherData?.name || 'Custom Substitution Cipher'}</strong>
+              <p>Analyzing current custom cipher configuration</p>
+            </div>
           </div>
 
           <div className="control-group">

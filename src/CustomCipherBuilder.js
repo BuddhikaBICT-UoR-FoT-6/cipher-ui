@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { showToast } from './Toast';
 import './CustomCipherBuilder.css';
 
 /**
@@ -16,7 +17,7 @@ import './CustomCipherBuilder.css';
  * @example
  * <CustomCipherBuilder />
  */
-const CustomCipherBuilder = () => {
+const CustomCipherBuilder = ({ onMappingChange, onNameChange }) => {
   /**
    * Alphabet mapping state for custom cipher
    * @type {Object}
@@ -54,6 +55,7 @@ const CustomCipherBuilder = () => {
       defaultMapping[letter] = letter;
     });
     setMapping(defaultMapping);
+    if (onMappingChange) onMappingChange(defaultMapping);
   }, []);
 
   /**
@@ -63,10 +65,12 @@ const CustomCipherBuilder = () => {
    * @param {string} toLetter - Mapped letter
    */
   const handleMappingChange = (fromLetter, toLetter) => {
-    setMapping(prev => ({
-      ...prev,
+    const newMapping = {
+      ...mapping,
       [fromLetter]: toLetter.toUpperCase()
-    }));
+    };
+    setMapping(newMapping);
+    if (onMappingChange) onMappingChange(newMapping);
   };
 
   /**
@@ -99,8 +103,13 @@ const CustomCipherBuilder = () => {
    * @function handleEncrypt
    */
   const handleEncrypt = () => {
+    if (!testText.trim()) {
+      showToast('Please enter text to encrypt', 'warning');
+      return;
+    }
     const encrypted = applyCipher(testText, false);
     setOutputText(encrypted);
+    showToast('Text encrypted with custom cipher!', 'success');
   };
 
   /**
@@ -108,8 +117,13 @@ const CustomCipherBuilder = () => {
    * @function handleDecrypt
    */
   const handleDecrypt = () => {
+    if (!testText.trim()) {
+      showToast('Please enter text to decrypt', 'warning');
+      return;
+    }
     const decrypted = applyCipher(testText, true);
     setOutputText(decrypted);
+    showToast('Text decrypted with custom cipher!', 'success');
   };
 
   /**
@@ -123,6 +137,8 @@ const CustomCipherBuilder = () => {
       newMapping[letter] = shuffled[index];
     });
     setMapping(newMapping);
+    if (onMappingChange) onMappingChange(newMapping);
+    showToast('Alphabet mapping randomized!', 'info');
   };
 
   /**
@@ -135,6 +151,8 @@ const CustomCipherBuilder = () => {
       defaultMapping[letter] = letter;
     });
     setMapping(defaultMapping);
+    if (onMappingChange) onMappingChange(defaultMapping);
+    showToast('Alphabet mapping reset to default!', 'info');
   };
 
   /**
@@ -157,12 +175,12 @@ const CustomCipherBuilder = () => {
       });
 
       if (response.ok) {
-        alert('Cipher saved successfully!');
+        showToast('Custom cipher saved successfully!', 'success');
       } else {
-        alert('Failed to save cipher');
+        showToast('Failed to save cipher', 'error');
       }
     } catch (error) {
-      alert('Error saving cipher');
+      showToast('Error saving cipher', 'error');
     }
   };
 
@@ -256,16 +274,21 @@ const CustomCipherBuilder = () => {
    * @function downloadJavaCode
    */
   const downloadJavaCode = () => {
-    const javaCode = generateJavaCode();
-    const className = cipherName.replace(/\s+/g, '') + 'Cipher';
-    
-    const blob = new Blob([javaCode], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${className}.java`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const javaCode = generateJavaCode();
+      const className = cipherName.replace(/\s+/g, '') + 'Cipher';
+      
+      const blob = new Blob([javaCode], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${className}.java`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Java code downloaded successfully!', 'success');
+    } catch (error) {
+      showToast('Failed to download Java code', 'error');
+    }
   };
 
   /**
@@ -273,19 +296,24 @@ const CustomCipherBuilder = () => {
    * @function exportCipher
    */
   const exportCipher = () => {
-    const config = {
-      name: cipherName,
-      mapping: mapping,
-      created: new Date().toISOString()
-    };
-    
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${cipherName.replace(/\s+/g, '_')}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const config = {
+        name: cipherName,
+        mapping: mapping,
+        created: new Date().toISOString()
+      };
+      
+      const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${cipherName.replace(/\s+/g, '_')}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Cipher configuration exported successfully!', 'success');
+    } catch (error) {
+      showToast('Failed to export cipher configuration', 'error');
+    }
   };
 
   return (
@@ -300,7 +328,10 @@ const CustomCipherBuilder = () => {
         <input
           type="text"
           value={cipherName}
-          onChange={(e) => setCipherName(e.target.value)}
+          onChange={(e) => {
+            setCipherName(e.target.value);
+            if (onNameChange) onNameChange(e.target.value);
+          }}
           className="cipher-name-input"
           placeholder="Enter cipher name"
         />

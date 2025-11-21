@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { showToast } from './Toast';
 import './AdminDashboard.css';
 
 const AdminDashboard = ({ user, onClose }) => {
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [newUser, setNewUser] = useState({ username: '', email: '', password: '', role: 'user' });
 
   useEffect(() => {
     fetchUsers();
@@ -49,6 +52,38 @@ const AdminDashboard = ({ user, onClose }) => {
     }
   };
 
+  const addUser = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3001/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newUser)
+      });
+      
+      if (response.ok) {
+        setNewUser({ username: '', email: '', password: '', role: 'user' });
+        setShowAddUser(false);
+        fetchUsers();
+        fetchStats();
+        showToast('User added successfully!', 'success');
+      } else {
+        showToast('Failed to add user', 'error');
+      }
+    } catch (error) {
+      console.error('Error adding user:', error);
+      showToast('Error adding user', 'error');
+    }
+  };
+
+  const toggleUserRole = (userId, currentRole) => {
+    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+    updateUser(userId, { role: newRole, is_active: true });
+  };
+
   const updateUser = async (userId, updates) => {
     try {
       const token = localStorage.getItem('token');
@@ -63,9 +98,13 @@ const AdminDashboard = ({ user, onClose }) => {
       
       if (response.ok) {
         fetchUsers();
+        showToast('User updated successfully!', 'success');
+      } else {
+        showToast('Failed to update user', 'error');
       }
     } catch (error) {
       console.error('Error updating user:', error);
+      showToast('Error updating user', 'error');
     }
   };
 
@@ -83,9 +122,14 @@ const AdminDashboard = ({ user, onClose }) => {
       
       if (response.ok) {
         fetchUsers();
+        fetchStats();
+        showToast('User deleted successfully!', 'success');
+      } else {
+        showToast('Failed to delete user', 'error');
       }
     } catch (error) {
       console.error('Error deleting user:', error);
+      showToast('Error deleting user', 'error');
     }
   };
 
@@ -93,10 +137,7 @@ const AdminDashboard = ({ user, onClose }) => {
     updateUser(userId, { is_active: !currentStatus, role: 'user' });
   };
 
-  const toggleUserRole = (userId, currentRole) => {
-    const newRole = currentRole === 'admin' ? 'user' : 'admin';
-    updateUser(userId, { role: newRole, is_active: true });
-  };
+
 
   if (loading) {
     return (
@@ -132,7 +173,15 @@ const AdminDashboard = ({ user, onClose }) => {
         </div>
 
         <div className="users-section">
-          <h3>User Management</h3>
+          <div className="section-header">
+            <h3>User Management</h3>
+            <button 
+              className="add-user-btn"
+              onClick={() => setShowAddUser(true)}
+            >
+              ➕ Add User
+            </button>
+          </div>
           <div className="users-table">
             <div className="table-header">
               <div>User</div>
@@ -187,6 +236,43 @@ const AdminDashboard = ({ user, onClose }) => {
             ))}
           </div>
         </div>
+
+        {showAddUser && (
+          <div className="add-user-modal">
+            <div className="modal-content">
+              <h3>Add New User</h3>
+              <input
+                type="text"
+                placeholder="Username"
+                value={newUser.username}
+                onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+              />
+              <input
+                type="email"
+                placeholder="Email"
+                value={newUser.email}
+                onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={newUser.password}
+                onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+              />
+              <select
+                value={newUser.role}
+                onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+              >
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
+              <div className="modal-actions">
+                <button onClick={addUser} className="save-btn">Save</button>
+                <button onClick={() => setShowAddUser(false)} className="cancel-btn">Cancel</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

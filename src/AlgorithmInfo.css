@@ -3,14 +3,19 @@
   backdrop-filter: blur(10px);
   border-radius: 20px;
   padding: 25px;
-  margin-bottom: 25px;
+  margin-bottom: 80px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
   animation: slideUp 0.6s ease-out;
-  animation-delay: 0.15s;
+  animation-delay: 0.2s;
   opacity: 0;
   animation-fill-mode: forwards;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  z-index: 2;
 }
 
 .dark-theme .algorithm-info {
@@ -22,10 +27,12 @@
 .algorithm-info:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(102, 126, 234, 0.5);
 }
 
 .dark-theme .algorithm-info:hover {
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(78, 205, 196, 0.5);
 }
 
 .info-header {
@@ -73,11 +80,13 @@
   color: #34495e;
   font-size: 1rem;
   line-height: 1.6;
-  margin-bottom: 20px;
+  margin-bottom: 50px;
   padding: 15px;
   background: linear-gradient(135deg, #f8f9fa, #e9ecef);
   border-radius: 12px;
   border-left: 4px solid #667eea;
+  position: relative;
+  z-index: 10;
 }
 
 .dark-theme .description {
@@ -86,10 +95,26 @@
   border-left: 4px solid #667eea;
 }
 
+.description:hover {
+  background: rgba(0, 0, 0, 0.9);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.dark-theme .description:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: #000000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
+}
+
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 15px;
+  position: relative;
+  z-index: 5;
 }
 
 .info-item {
@@ -107,12 +132,25 @@
 }
 
 .info-item:hover {
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(0, 0, 0, 0.9);
+  color: #ffffff;
   transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.info-item:hover .label,
+.info-item:hover .value {
+  color: #ffffff;
 }
 
 .dark-theme .info-item:hover {
-  background: rgba(52, 73, 94, 0.9);
+  background: rgba(255, 255, 255, 0.9);
+  color: #000000;
+}
+
+.dark-theme .info-item:hover .label,
+.dark-theme .info-item:hover .value {
+  color: #000000;
 }
 
 .label {

@@ -160,6 +160,38 @@
   color: #666666;
 }
 
+.cipher-info {
+  background: var(--hover-bg, rgba(0, 0, 0, 0.05));
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-color, #667eea);
+}
+
+.cipher-info strong {
+  color: var(--text-color, #2c3e50);
+  display: block;
+  margin-bottom: 5px;
+}
+
+.cipher-info p {
+  margin: 0;
+  color: var(--text-secondary, #666666);
+  font-size: 0.9rem;
+}
+
+.dark-theme .cipher-info {
+  background: rgba(255, 255, 255, 0.1);
+  border-left-color: #4ecdc4;
+}
+
+.dark-theme .cipher-info strong {
+  color: #ffffff;
+}
+
+.dark-theme .cipher-info p {
+  color: rgba(255, 255, 255, 0.7);
+}
+
 .results-section {
   display: grid;
   gap: 20px;

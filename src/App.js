@@ -4,6 +4,7 @@ import CipherApp from './CipherApp';
 import ThemeToggle from './ThemeToggle';
 import Login from './Login';
 import AdminDashboard from './AdminDashboard';
+import Toast, { showToast } from './Toast';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -27,6 +28,7 @@ function App() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    showToast('Logged out successfully', 'info');
   };
 
   return (
@@ -51,6 +53,7 @@ function App() {
             onClose={() => setShowAdmin(false)}
           />
         )}
+        <Toast />
       </div>
     </ThemeProvider>
   );
