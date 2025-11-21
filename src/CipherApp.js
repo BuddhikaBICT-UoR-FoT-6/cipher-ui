@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './CipherApp.css';
 
 const CipherApp = () => {
@@ -8,6 +8,8 @@ const CipherApp = () => {
   const [key, setKey] = useState('');
   const [shift, setShift] = useState(3);
   const [rails, setRails] = useState(3);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [animateResult, setAnimateResult] = useState(false);
 
   const cipherAlgorithms = {
     caesar: {
@@ -132,7 +134,12 @@ const CipherApp = () => {
     }
   };
 
-  const handleEncrypt = () => {
+  const handleEncrypt = async () => {
+    setIsProcessing(true);
+    setAnimateResult(false);
+    
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
     const cipher = cipherAlgorithms[selectedCipher];
     let result = '';
     
@@ -155,9 +162,16 @@ const CipherApp = () => {
     }
     
     setOutputText(result);
+    setIsProcessing(false);
+    setAnimateResult(true);
   };
 
-  const handleDecrypt = () => {
+  const handleDecrypt = async () => {
+    setIsProcessing(true);
+    setAnimateResult(false);
+    
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
     const cipher = cipherAlgorithms[selectedCipher];
     let result = '';
     
@@ -167,7 +181,7 @@ const CipherApp = () => {
         break;
       case 'rot13':
       case 'atbash':
-        result = cipher.encode(inputText); // Self-inverse
+        result = cipher.encode(inputText);
         break;
       case 'vigenere':
         result = cipher.decrypt(inputText, key);
@@ -180,82 +194,143 @@ const CipherApp = () => {
     }
     
     setOutputText(result);
+    setIsProcessing(false);
+    setAnimateResult(true);
   };
+
+  useEffect(() => {
+    if (animateResult) {
+      const timer = setTimeout(() => setAnimateResult(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [animateResult]);
 
   return (
     <div className="cipher-app">
-      <h1>Cipher Algorithms</h1>
+      <div className="header">
+        <h1 className="title">🔐 Cipher Algorithms</h1>
+        <p className="subtitle">Encrypt and decrypt text using classic cipher methods</p>
+      </div>
       
-      <div className="cipher-selector">
-        <label>Select Cipher:</label>
-        <select value={selectedCipher} onChange={(e) => setSelectedCipher(e.target.value)}>
-          {Object.entries(cipherAlgorithms).map(([key, cipher]) => (
-            <option key={key} value={key}>{cipher.name}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="input-section">
-        <label>Input Text:</label>
-        <textarea
-          value={inputText}
-          onChange={(e) => setInputText(e.target.value)}
-          placeholder="Enter text to encrypt/decrypt"
-        />
-      </div>
-
-      <div className="parameters">
-        {(selectedCipher === 'caesar') && (
-          <div>
-            <label>Shift:</label>
-            <input
-              type="number"
-              value={shift}
-              onChange={(e) => setShift(e.target.value)}
-              min="1"
-              max="25"
-            />
+      <div className="card cipher-selector-card">
+        <div className="cipher-selector">
+          <label>🎯 Select Cipher Algorithm:</label>
+          <div className="select-wrapper">
+            <select value={selectedCipher} onChange={(e) => setSelectedCipher(e.target.value)}>
+              {Object.entries(cipherAlgorithms).map(([key, cipher]) => (
+                <option key={key} value={key}>{cipher.name}</option>
+              ))}
+            </select>
           </div>
-        )}
-        
-        {selectedCipher === 'vigenere' && (
-          <div>
-            <label>Key:</label>
-            <input
-              type="text"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              placeholder="Enter keyword"
-            />
-          </div>
-        )}
-        
-        {selectedCipher === 'railfence' && (
-          <div>
-            <label>Rails:</label>
-            <input
-              type="number"
-              value={rails}
-              onChange={(e) => setRails(e.target.value)}
-              min="2"
-              max="10"
-            />
-          </div>
-        )}
+        </div>
       </div>
 
-      <div className="buttons">
-        <button onClick={handleEncrypt}>Encrypt</button>
-        <button onClick={handleDecrypt}>Decrypt</button>
+      <div className="card input-card">
+        <div className="input-section">
+          <label>📝 Input Text:</label>
+          <textarea
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="Enter your message here..."
+            className="input-textarea"
+          />
+        </div>
       </div>
 
-      <div className="output-section">
-        <label>Output:</label>
-        <textarea
-          value={outputText}
-          readOnly
-          placeholder="Result will appear here"
-        />
+      {(selectedCipher === 'caesar' || selectedCipher === 'vigenere' || selectedCipher === 'railfence') && (
+        <div className="card parameters-card">
+          <label className="parameters-title">⚙️ Parameters:</label>
+          <div className="parameters">
+            {selectedCipher === 'caesar' && (
+              <div className="parameter-group">
+                <label>🔢 Shift Value:</label>
+                <input
+                  type="number"
+                  value={shift}
+                  onChange={(e) => setShift(e.target.value)}
+                  min="1"
+                  max="25"
+                  className="parameter-input"
+                />
+              </div>
+            )}
+            
+            {selectedCipher === 'vigenere' && (
+              <div className="parameter-group">
+                <label>🔑 Keyword:</label>
+                <input
+                  type="text"
+                  value={key}
+                  onChange={(e) => setKey(e.target.value)}
+                  placeholder="Enter secret keyword"
+                  className="parameter-input"
+                />
+              </div>
+            )}
+            
+            {selectedCipher === 'railfence' && (
+              <div className="parameter-group">
+                <label>🚂 Number of Rails:</label>
+                <input
+                  type="number"
+                  value={rails}
+                  onChange={(e) => setRails(e.target.value)}
+                  min="2"
+                  max="10"
+                  className="parameter-input"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="card buttons-card">
+        <div className="buttons">
+          <button 
+            onClick={handleEncrypt} 
+            disabled={isProcessing || !inputText.trim()}
+            className={`btn encrypt-btn ${isProcessing ? 'processing' : ''}`}
+          >
+            {isProcessing ? (
+              <><span className="spinner"></span> Processing...</>
+            ) : (
+              <>🔒 Encrypt</>
+            )}
+          </button>
+          <button 
+            onClick={handleDecrypt} 
+            disabled={isProcessing || !inputText.trim()}
+            className={`btn decrypt-btn ${isProcessing ? 'processing' : ''}`}
+          >
+            {isProcessing ? (
+              <><span className="spinner"></span> Processing...</>
+            ) : (
+              <>🔓 Decrypt</>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <div className={`card output-card ${animateResult ? 'animate-result' : ''}`}>
+        <div className="output-section">
+          <label>✨ Output Result:</label>
+          <textarea
+            value={outputText}
+            readOnly
+            placeholder="Your encrypted/decrypted text will appear here..."
+            className="output-textarea"
+          />
+          {outputText && (
+            <button 
+              className="copy-btn"
+              onClick={() => navigator.clipboard.writeText(outputText)}
+              title="Copy to clipboard"
+            >
+              📋 Copy
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
