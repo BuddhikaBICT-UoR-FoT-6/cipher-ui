@@ -14,14 +14,20 @@ import './ThemeToggle.css';
  * @description Provides theme toggle and authentication controls in top-right corner
  * @returns {JSX.Element} Theme toggle and auth buttons
  */
-const ThemeToggle = ({ user, onShowLogin, onLogout, onShowAdmin }) => {
+const ThemeToggle = ({ user, onShowLogin, onLogout, onShowAdmin, onShowUserMenu }) => {
   const { isDark, toggleTheme } = useTheme();
 
   return (
     <div className="top-controls">
       {user ? (
         <div className="user-controls">
-          <span className="user-name">👤 {user.username || user.email}</span>
+          <button 
+            className="user-name-btn"
+            onClick={onShowUserMenu}
+            title="Account Settings"
+          >
+            👤 {user.username || user.email}
+          </button>
 
           {user.role === 'admin' && (
             <button className="admin-btn" onClick={onShowAdmin}>

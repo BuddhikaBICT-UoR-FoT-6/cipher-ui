@@ -4,12 +4,14 @@ import CipherApp from './CipherApp';
 import ThemeToggle from './ThemeToggle';
 import Login from './Login';
 import AdminDashboard from './AdminDashboard';
+import UserMenu from './UserMenu';
 import Toast, { showToast } from './Toast';
 
 function App() {
   const [user, setUser] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -39,6 +41,7 @@ function App() {
           onShowLogin={() => setShowLogin(true)}
           onLogout={handleLogout}
           onShowAdmin={() => setShowAdmin(true)}
+          onShowUserMenu={() => setShowUserMenu(true)}
         />
         <CipherApp user={user} onShowLogin={() => setShowLogin(true)} />
         {showLogin && (
@@ -51,6 +54,13 @@ function App() {
           <AdminDashboard 
             user={user}
             onClose={() => setShowAdmin(false)}
+          />
+        )}
+        {showUserMenu && user && (
+          <UserMenu 
+            user={user}
+            onLogout={handleLogout}
+            onClose={() => setShowUserMenu(false)}
           />
         )}
         <Toast />

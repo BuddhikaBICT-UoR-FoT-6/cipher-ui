@@ -21,7 +21,7 @@
   gap: 10px;
 }
 
-.user-name {
+.user-name-btn {
   color: white;
   font-size: 14px;
   font-weight: 500;
@@ -29,6 +29,14 @@
   padding: 8px 12px;
   border-radius: 20px;
   backdrop-filter: blur(10px);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.user-name-btn:hover {
+  background: rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
 }
 
 .login-btn,

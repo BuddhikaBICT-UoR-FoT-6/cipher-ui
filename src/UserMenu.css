@@ -1,0 +1,159 @@
+.user-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1500;
+}
+
+.user-menu {
+  background: var(--card-bg, #ffffff);
+  border-radius: 15px;
+  padding: 25px;
+  width: 350px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color, #e1e8ed);
+}
+
+.dark-theme .user-menu {
+  background: rgba(44, 62, 80, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-info {
+  text-align: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--border-color, #e1e8ed);
+}
+
+.user-info h3 {
+  margin: 0 0 5px 0;
+  color: var(--text-color, #2c3e50);
+}
+
+.user-info p {
+  margin: 0 0 10px 0;
+  color: var(--text-secondary, #666666);
+  font-size: 0.9rem;
+}
+
+.role-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.role-badge.admin {
+  background: #ff6b6b;
+  color: white;
+}
+
+.role-badge.user {
+  background: #4ecdc4;
+  color: white;
+}
+
+.menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menu-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+  text-align: left;
+}
+
+.deactivate-btn {
+  background: #ffc107;
+  color: #000;
+}
+
+.deactivate-btn:hover {
+  background: #e0a800;
+  transform: translateY(-2px);
+}
+
+.delete-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.delete-btn:hover {
+  background: #c82333;
+  transform: translateY(-2px);
+}
+
+.confirm-dialog {
+  margin-top: 20px;
+  padding: 15px;
+  background: var(--hover-bg, rgba(0, 0, 0, 0.05));
+  border-radius: 8px;
+  border-left: 4px solid #dc3545;
+}
+
+.confirm-dialog h4 {
+  margin: 0 0 10px 0;
+  color: var(--text-color, #2c3e50);
+}
+
+.confirm-dialog p {
+  margin: 0 0 15px 0;
+  color: var(--text-secondary, #666666);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.confirm-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  flex: 1;
+}
+
+.cancel-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.confirm-btn:hover {
+  background: #c82333;
+}
+
+.cancel-btn:hover {
+  background: #545b62;
+}
+
+@media (max-width: 768px) {
+  .user-menu {
+    width: 90%;
+    margin: 20px;
+  }
+}
