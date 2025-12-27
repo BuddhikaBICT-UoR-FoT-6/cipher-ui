@@ -36,6 +36,7 @@ const SourceCodeViewer = ({ selectedCipher }) => {
    * @property {string} atbash - Atbash cipher Java source code
    * @property {string} vigenere - Vigenère cipher Java source code
    * @property {string} railfence - Rail Fence cipher Java source code
+ * @property {string} chain - Multiple Cipher Chaining concept code
    */
   const sourceCode = {
     caesar: `public class CaesarCipher {
@@ -235,7 +236,35 @@ const SourceCodeViewer = ({ selectedCipher }) => {
         
         return decrypted.toString();
     }
-}`
+}`,
+    chain: `// Multiple Cipher Chaining (concept)
+// Encrypt: apply steps in order. Decrypt: apply steps in reverse.
+
+import java.util.List;
+
+public class CipherChain {
+    public static String encrypt(String text, List<CipherStep> steps) {
+        String result = text;
+        for (CipherStep step : steps) {
+            result = step.encrypt(result);
+        }
+        return result;
+    }
+
+    public static String decrypt(String text, List<CipherStep> steps) {
+        String result = text;
+        for (int i = steps.size() - 1; i >= 0; i--) {
+            result = steps.get(i).decrypt(result);
+        }
+        return result;
+    }
+
+    public interface CipherStep {
+        String encrypt(String input);
+        String decrypt(String input);
+    }
+}
+`
   };
 
   /**

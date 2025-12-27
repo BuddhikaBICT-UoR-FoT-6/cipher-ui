@@ -30,6 +30,9 @@ const CipherApp = ({ user, onShowLogin }) => {
   const [key, setKey] = useState('');
   const [shift, setShift] = useState(3);
   const [rails, setRails] = useState(3);
+  const [chainSteps, setChainSteps] = useState([
+    { id: 'step-1', cipher: 'caesar', shift: 3, key: '', rails: 3 }
+  ]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [animateResult, setAnimateResult] = useState(false);
   const [showBruteForce, setShowBruteForce] = useState(false);
@@ -157,9 +160,89 @@ const CipherApp = ({ user, onShowLogin }) => {
         return result;
       }
     },
+    chain: {
+      name: 'Multiple Cipher Chaining'
+    },
     custom: {
       name: 'Custom Cipher Builder'
     }
+  };
+
+  // Ensure chaining stays restricted to authenticated users.
+  useEffect(() => {
+    if (!user && selectedCipher === 'chain') {
+      setSelectedCipher('caesar');
+    }
+  }, [user, selectedCipher]);
+
+  const applyChainStep = (text, step, operation) => {
+    const cipherKey = step?.cipher;
+
+    switch (cipherKey) {
+      case 'caesar': {
+        const stepShift = parseInt(step.shift, 10);
+        if (!Number.isFinite(stepShift) || stepShift < 1 || stepShift > 25) {
+          throw new Error('Invalid Caesar shift');
+        }
+        return operation === 'encrypt'
+          ? cipherAlgorithms.caesar.encrypt(text, stepShift)
+          : cipherAlgorithms.caesar.decrypt(text, stepShift);
+      }
+      case 'rot13':
+        return cipherAlgorithms.rot13.encode(text);
+      case 'atbash':
+        return cipherAlgorithms.atbash.encode(text);
+      case 'vigenere': {
+        const stepKey = (step.key || '').trim();
+        if (!stepKey) {
+          throw new Error('Missing Vigenère keyword');
+        }
+        return operation === 'encrypt'
+          ? cipherAlgorithms.vigenere.encrypt(text, stepKey)
+          : cipherAlgorithms.vigenere.decrypt(text, stepKey);
+      }
+      case 'railfence': {
+        const stepRails = parseInt(step.rails, 10);
+        if (!Number.isFinite(stepRails) || stepRails < 2 || stepRails > 10) {
+          throw new Error('Invalid Rail Fence rails');
+        }
+        return operation === 'encrypt'
+          ? cipherAlgorithms.railfence.encrypt(text, stepRails)
+          : cipherAlgorithms.railfence.decrypt(text, stepRails);
+      }
+      default:
+        throw new Error('Unsupported chain cipher');
+    }
+  };
+
+  const chainEncrypt = (text) => {
+    if (!user) {
+      throw new Error('Authentication required');
+    }
+    if (!Array.isArray(chainSteps) || chainSteps.length === 0) {
+      throw new Error('No chain steps');
+    }
+
+    let result = text;
+    for (const step of chainSteps) {
+      result = applyChainStep(result, step, 'encrypt');
+    }
+    return result;
+  };
+
+  const chainDecrypt = (text) => {
+    if (!user) {
+      throw new Error('Authentication required');
+    }
+    if (!Array.isArray(chainSteps) || chainSteps.length === 0) {
+      throw new Error('No chain steps');
+    }
+
+    let result = text;
+    for (const step of [...chainSteps].reverse()) {
+      result = applyChainStep(result, step, 'decrypt');
+    }
+    return result;
   };
 
   /**
@@ -213,6 +296,9 @@ const CipherApp = ({ user, onShowLogin }) => {
             return;
           }
           result = cipher.encrypt(inputText, parseInt(rails));
+          break;
+        case 'chain':
+          result = chainEncrypt(inputText);
           break;
         default:
           result = inputText;
@@ -280,6 +366,9 @@ const CipherApp = ({ user, onShowLogin }) => {
           }
           result = cipher.decrypt(inputText, parseInt(rails));
           break;
+        case 'chain':
+          result = chainDecrypt(inputText);
+          break;
         default:
           result = inputText;
       }
@@ -312,6 +401,30 @@ const CipherApp = ({ user, onShowLogin }) => {
     setSelectedCipher(cipher);
   };
 
+  const availableCipherEntries = Object.entries(cipherAlgorithms).filter(([cipherKey]) => {
+    if (cipherKey === 'chain') return !!user;
+    return true;
+  });
+
+  const updateChainStep = (stepId, patch) => {
+    setChainSteps(prev => prev.map(s => (s.id === stepId ? { ...s, ...patch } : s)));
+  };
+
+  const addChainStep = () => {
+    setChainSteps(prev => {
+      if (prev.length >= 5) return prev;
+      const nextIndex = prev.length + 1;
+      return [...prev, { id: `step-${nextIndex}`, cipher: 'caesar', shift: 3, key: '', rails: 3 }];
+    });
+  };
+
+  const removeChainStep = (stepId) => {
+    setChainSteps(prev => {
+      if (prev.length <= 1) return prev;
+      return prev.filter(s => s.id !== stepId);
+    });
+  };
+
   return (
     <div className="cipher-app">
       <div className="header">
@@ -324,7 +437,7 @@ const CipherApp = ({ user, onShowLogin }) => {
           <label>🎯 Select Cipher Algorithm:</label>
           <div className="select-wrapper">
             <select value={selectedCipher} onChange={(e) => handleCipherChange(e.target.value)}>
-              {Object.entries(cipherAlgorithms).map(([key, cipher]) => (
+              {availableCipherEntries.map(([key, cipher]) => (
                 <option key={key} value={key}>{cipher.name}</option>
               ))}
             </select>
@@ -333,7 +446,10 @@ const CipherApp = ({ user, onShowLogin }) => {
       </div>
 
       {selectedCipher !== 'custom' && (
-        <AlgorithmInfo selectedCipher={selectedCipher} />
+        <AlgorithmInfo
+          selectedCipher={selectedCipher}
+          chainSteps={selectedCipher === 'chain' ? chainSteps : undefined}
+        />
       )}
 
       {selectedCipher !== 'custom' && (
@@ -370,6 +486,108 @@ const CipherApp = ({ user, onShowLogin }) => {
               />
             </div>
           </div>
+
+          {selectedCipher === 'chain' && (
+            user ? (
+              <div className="card chain-card">
+                <label className="parameters-title">⛓️ Cipher Chain (applies top → bottom):</label>
+                <div className="chain-steps">
+                  {chainSteps.map((step, index) => (
+                    <div key={step.id} className="chain-step">
+                      <div className="chain-step-header">
+                        <strong>Step {index + 1}</strong>
+                        <button
+                          type="button"
+                          className="btn chain-remove-btn"
+                          onClick={() => removeChainStep(step.id)}
+                          disabled={chainSteps.length <= 1}
+                        >
+                          ✖ Remove
+                        </button>
+                      </div>
+
+                      <div className="parameter-group">
+                        <label>🔗 Cipher:</label>
+                        <select
+                          value={step.cipher}
+                          onChange={(e) => updateChainStep(step.id, { cipher: e.target.value })}
+                          className="parameter-input"
+                        >
+                          <option value="caesar">Caesar</option>
+                          <option value="rot13">ROT13</option>
+                          <option value="atbash">Atbash</option>
+                          <option value="vigenere">Vigenère</option>
+                          <option value="railfence">Rail Fence</option>
+                        </select>
+                      </div>
+
+                      {step.cipher === 'caesar' && (
+                        <div className="parameter-group">
+                          <label>🔢 Shift:</label>
+                          <input
+                            type="number"
+                            value={step.shift}
+                            onChange={(e) => updateChainStep(step.id, { shift: e.target.value })}
+                            min="1"
+                            max="25"
+                            className="parameter-input"
+                          />
+                        </div>
+                      )}
+
+                      {step.cipher === 'vigenere' && (
+                        <div className="parameter-group">
+                          <label>🔑 Keyword:</label>
+                          <input
+                            type="text"
+                            value={step.key}
+                            onChange={(e) => updateChainStep(step.id, { key: e.target.value })}
+                            placeholder="Enter keyword"
+                            className="parameter-input"
+                          />
+                        </div>
+                      )}
+
+                      {step.cipher === 'railfence' && (
+                        <div className="parameter-group">
+                          <label>🚂 Rails:</label>
+                          <input
+                            type="number"
+                            value={step.rails}
+                            onChange={(e) => updateChainStep(step.id, { rails: e.target.value })}
+                            min="2"
+                            max="10"
+                            className="parameter-input"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="chain-actions">
+                  <button
+                    type="button"
+                    className="btn chain-add-btn"
+                    onClick={addChainStep}
+                    disabled={chainSteps.length >= 5}
+                  >
+                    ➕ Add Step
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="card login-prompt-card">
+                <div className="login-prompt">
+                  <h3>🔐 Authentication Required</h3>
+                  <p>Please login or register to access Multiple Cipher Chaining.</p>
+                  <button onClick={onShowLogin} className="prompt-login-btn">
+                    🔑 Login / Register
+                  </button>
+                </div>
+              </div>
+            )
+          )}
 
           {(selectedCipher === 'caesar' || selectedCipher === 'vigenere' || selectedCipher === 'railfence') && (
         <div className="card parameters-card">

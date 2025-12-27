@@ -214,6 +214,59 @@
   animation-delay: 0.5s;
 }
 
+.chain-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chain-step {
+  padding: 16px;
+  border-radius: 14px;
+  border: 2px solid rgba(225, 232, 237, 0.9);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.dark-theme .chain-step {
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.chain-step-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  color: #2c3e50;
+}
+
+.dark-theme .chain-step-header {
+  color: #ffffff;
+}
+
+.chain-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.chain-add-btn {
+  background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+  color: white;
+}
+
+.chain-remove-btn {
+  background: rgba(231, 76, 60, 0.12);
+  color: #c0392b;
+  border: 2px solid rgba(231, 76, 60, 0.25);
+  padding: 10px 14px;
+}
+
+.dark-theme .chain-remove-btn {
+  color: #ffb3b3;
+  border: 2px solid rgba(231, 76, 60, 0.35);
+}
+
 .cipher-selector label,
 .input-section label,
 .output-section label,
