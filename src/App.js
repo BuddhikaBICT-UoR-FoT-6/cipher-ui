@@ -7,6 +7,26 @@ import AdminDashboard from './AdminDashboard';
 import UserMenu from './UserMenu';
 import Toast, { showToast } from './Toast';
 
+const decodeJwtPayload = (token) => {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+    const json = atob(padded);
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+const getTokenExpiryMs = (token) => {
+  const payload = decodeJwtPayload(token);
+  if (!payload || typeof payload.exp !== 'number') return null;
+  return payload.exp * 1000;
+};
+
 function App() {
   const [user, setUser] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
@@ -15,8 +35,48 @@ function App() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const expiryMs = getTokenExpiryMs(token);
+    if (!expiryMs) return;
+
+    const delay = expiryMs - Date.now();
+    if (delay <= 0) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      setShowAdmin(false);
+      setShowUserMenu(false);
+      setShowLogin(true);
+      showToast('Session expired. Please login again.', 'warning');
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      setShowAdmin(false);
+      setShowUserMenu(false);
+      setShowLogin(true);
+      showToast('Session expired. Please login again.', 'warning');
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [user]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     if (token && savedUser) {
+      const expiryMs = getTokenExpiryMs(token);
+      if (expiryMs && expiryMs <= Date.now()) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setUser(null);
+        setShowLogin(true);
+        return;
+      }
       setUser(JSON.parse(savedUser));
     }
   }, []);
