@@ -9,8 +9,8 @@ import AlgorithmInfo from './AlgorithmInfo';
 import SourceCodeViewer from './SourceCodeViewer';
 import CustomCipherBuilder from './CustomCipherBuilder';
 import BruteForceSimulator from './BruteForceSimulator';
+import RailFencePattern from './RailFencePattern';
 import { showToast } from './Toast';
-import Login from './Login';
 import './CipherApp.css';
 
 /**
@@ -417,6 +417,13 @@ const CipherApp = ({ user, onShowLogin }) => {
             )}
             </div>
           </div>
+          )}
+
+          {selectedCipher === 'railfence' && inputText.trim() && (
+            <div className="card railfence-visual-card">
+              <label className="parameters-title">🧵 Rail Fence Zigzag Pattern:</label>
+              <RailFencePattern text={inputText} rails={rails} />
+            </div>
           )}
 
           <div className="card buttons-card">

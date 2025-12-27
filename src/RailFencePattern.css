@@ -1,0 +1,79 @@
+.railfence-pattern {
+  width: 100%;
+}
+
+.railfence-pattern-note {
+  margin-bottom: 10px;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.dark-theme .railfence-pattern-note {
+  color: #ffffff;
+  opacity: 0.8;
+}
+
+.railfence-pattern-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 14px 16px;
+  border: 2px solid #e1e8ed;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.dark-theme .railfence-pattern-scroll {
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.railfence-pattern-svg {
+  display: block;
+}
+
+.railfence-rail-band {
+  fill: rgba(102, 126, 234, 0.08);
+}
+
+.dark-theme .railfence-rail-band {
+  fill: rgba(78, 205, 196, 0.12);
+}
+
+.railfence-grid-line {
+  stroke: rgba(44, 62, 80, 0.12);
+  stroke-width: 1;
+}
+
+.dark-theme .railfence-grid-line {
+  stroke: rgba(255, 255, 255, 0.12);
+}
+
+.railfence-path {
+  opacity: 0.95;
+}
+
+.railfence-node {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.18));
+}
+
+.railfence-node-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  fill: #ffffff;
+}
+
+.railfence-pattern-legend {
+  margin-top: 10px;
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.dark-theme .railfence-pattern-legend {
+  color: #ffffff;
+  opacity: 0.8;
+}
