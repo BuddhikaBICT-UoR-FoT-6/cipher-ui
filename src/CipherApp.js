@@ -10,6 +10,7 @@ import SourceCodeViewer from './SourceCodeViewer';
 import CustomCipherBuilder from './CustomCipherBuilder';
 import BruteForceSimulator from './BruteForceSimulator';
 import RailFencePattern from './RailFencePattern';
+import CryptanalysisChallenge from './CryptanalysisChallenge';
 import { showToast } from './Toast';
 import './CipherApp.css';
 
@@ -30,6 +31,7 @@ const CipherApp = ({ user, onShowLogin }) => {
   const [key, setKey] = useState('');
   const [shift, setShift] = useState(3);
   const [rails, setRails] = useState(3);
+  const [showCryptanalysisChallenge, setShowCryptanalysisChallenge] = useState(false);
   const [chainSteps, setChainSteps] = useState([
     { id: 'step-1', cipher: 'caesar', shift: 3, key: '', rails: 3 }
   ]);
@@ -174,6 +176,13 @@ const CipherApp = ({ user, onShowLogin }) => {
       setSelectedCipher('caesar');
     }
   }, [user, selectedCipher]);
+
+  // Ensure cryptanalysis modal stays restricted to authenticated users.
+  useEffect(() => {
+    if (!user && showCryptanalysisChallenge) {
+      setShowCryptanalysisChallenge(false);
+    }
+  }, [user, showCryptanalysisChallenge]);
 
   const applyChainStep = (text, step, operation) => {
     const cipherKey = step?.cipher;
@@ -430,6 +439,18 @@ const CipherApp = ({ user, onShowLogin }) => {
       <div className="header">
         <h1 className="title">🔐 Cipher Algorithms</h1>
         <p className="subtitle">Encrypt and decrypt text using classic cipher methods</p>
+
+        {user && (
+          <div style={{ marginTop: 14 }}>
+            <button
+              type="button"
+              className="prompt-login-btn"
+              onClick={() => setShowCryptanalysisChallenge(true)}
+            >
+              Cryptanalysis Challenge
+            </button>
+          </div>
+        )}
       </div>
       
       <div className="card cipher-selector-card">
@@ -715,6 +736,10 @@ const CipherApp = ({ user, onShowLogin }) => {
           mapping: customCipherMapping 
         } : null}
       />
+
+      {showCryptanalysisChallenge && (
+        <CryptanalysisChallenge user={user} onClose={() => setShowCryptanalysisChallenge(false)} />
+      )}
     </div>
   );
 };

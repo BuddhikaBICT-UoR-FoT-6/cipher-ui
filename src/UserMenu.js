@@ -1,9 +1,66 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { showToast } from './Toast';
 import './UserMenu.css';
 
 const UserMenu = ({ user, onLogout, onClose }) => {
   const [showConfirm, setShowConfirm] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileStats, setProfileStats] = useState(null);
+  const [profileBadges, setProfileBadges] = useState([]);
+  const [profileBadgeAssets, setProfileBadgeAssets] = useState([]);
+
+  const token = useMemo(() => localStorage.getItem('token'), []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchProfile = async () => {
+      setProfileLoading(true);
+      try {
+        const res = await fetch('http://localhost:3001/api/me/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.message || 'Failed to load profile');
+        if (!isMounted) return;
+
+        setProfileStats(data?.stats || null);
+        setProfileBadges(Array.isArray(data?.badges) ? data.badges : []);
+        setProfileBadgeAssets(Array.isArray(data?.badgeAssets) ? data.badgeAssets : []);
+      } catch {
+        if (!isMounted) return;
+        setProfileStats(null);
+        setProfileBadges([]);
+        setProfileBadgeAssets([]);
+      } finally {
+        if (isMounted) setProfileLoading(false);
+      }
+    };
+
+    if (user && token) {
+      fetchProfile();
+    } else {
+      setProfileLoading(false);
+      setProfileStats(null);
+      setProfileBadges([]);
+      setProfileBadgeAssets([]);
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, token]);
+
+  const hasBadge = (badge) => profileBadges.some((b) => (b?.badge || '').toLowerCase() === badge);
+
+  const badgeAssetMap = useMemo(() => {
+    const map = new Map();
+    for (const asset of profileBadgeAssets) {
+      const badge = (asset?.badge || '').toLowerCase();
+      if (badge && asset?.url_path) map.set(badge, asset.url_path);
+    }
+    return map;
+  }, [profileBadgeAssets]);
 
   const deactivateAccount = async () => {
     try {
@@ -68,6 +125,61 @@ const UserMenu = ({ user, onLogout, onClose }) => {
           <h3>👤 {user.username || user.email}</h3>
           <p>{user.email}</p>
           <span className={`role-badge ${user.role}`}>{user.role}</span>
+        </div>
+
+        <div className="menu-actions">
+          <div style={{ padding: '10px 0' }}>
+            <h4 style={{ margin: '0 0 8px 0' }}>🏅 Profile</h4>
+            {profileLoading ? (
+              <p style={{ margin: 0, opacity: 0.85 }}>Loading stats…</p>
+            ) : (
+              <>
+                <p style={{ margin: '0 0 6px 0' }}>
+                  Challenges completed: <strong>{profileStats?.challenges_completed ?? 0}</strong>
+                </p>
+                <p style={{ margin: '0 0 10px 0' }}>
+                  Total points: <strong>{profileStats?.total_points ?? 0}</strong>
+                </p>
+
+                <div>
+                  <p style={{ margin: '0 0 6px 0' }}>
+                    Badges:
+                  </p>
+                  <div className="badge-row" aria-label="Badges">
+                    {[
+                      { badge: 'bronze', label: 'Bronze', title: 'Bronze (3 completed)' },
+                      { badge: 'silver', label: 'Silver', title: 'Silver (6 completed)' },
+                      { badge: 'gold', label: 'Gold', title: 'Gold (11 completed)' },
+                      { badge: 'diamond', label: 'Diamond', title: 'Diamond (solve final/hardest challenge)' },
+                    ].map(({ badge, label, title }) => {
+                      const src = badgeAssetMap.get(badge);
+                      const earned = hasBadge(badge);
+                      const alt = `${label} badge`;
+
+                      return (
+                        <div key={badge} className="badge-item" title={title}>
+                          {src ? (
+                            <img
+                              className={`badge-img ${earned ? '' : 'badge-img--locked'}`}
+                              src={`http://localhost:3001${src}`}
+                              alt={alt}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div
+                              className={`badge-img badge-img--placeholder ${earned ? '' : 'badge-img--locked'}`}
+                              aria-label={alt}
+                            />
+                          )}
+                          <span className="badge-label">{label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
         
         <div className="menu-actions">

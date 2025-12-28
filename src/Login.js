@@ -33,7 +33,7 @@ const Login = ({ onLogin, onClose }) => {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         showToast(isLogin ? 'Login successful!' : 'Registration successful! Welcome!', 'success');
-        onLogin(data.user);
+        onLogin(data.user, data.token);
       } else {
         const errorMsg = data.message || 'Authentication failed';
         setError(errorMsg);

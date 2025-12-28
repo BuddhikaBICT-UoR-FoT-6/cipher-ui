@@ -29,59 +29,87 @@ const getTokenExpiryMs = (token) => {
 
 function App() {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [showLogin, setShowLogin] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
+  const forceLogout = (message) => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+    setShowAdmin(false);
+    setShowUserMenu(false);
+    setShowLogin(true);
+    if (message) showToast(message, 'warning');
+  };
+
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token) return undefined;
 
-    const expiryMs = getTokenExpiryMs(token);
-    if (!expiryMs) return;
+    const checkExpiry = () => {
+      const expiryMs = getTokenExpiryMs(token);
 
-    const delay = expiryMs - Date.now();
-    if (delay <= 0) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setUser(null);
-      setShowAdmin(false);
-      setShowUserMenu(false);
-      setShowLogin(true);
-      showToast('Session expired. Please login again.', 'warning');
-      return;
-    }
+      // If token is not a JWT or doesn't include exp, don't keep the user "logged in".
+      if (!expiryMs) {
+        forceLogout('Session expired. Please login again.');
+        return { expired: true, delay: 0 };
+      }
 
-    const timer = setTimeout(() => {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      setUser(null);
-      setShowAdmin(false);
-      setShowUserMenu(false);
-      setShowLogin(true);
-      showToast('Session expired. Please login again.', 'warning');
-    }, delay);
+      const delay = expiryMs - Date.now();
+      if (delay <= 0) {
+        forceLogout('Session expired. Please login again.');
+        return { expired: true, delay: 0 };
+      }
 
-    return () => clearTimeout(timer);
-  }, [user]);
+      return { expired: false, delay };
+    };
+
+    // Initial check + schedule a precise timeout.
+    const initial = checkExpiry();
+    if (initial.expired) return undefined;
+
+    const expiryTimeout = setTimeout(() => {
+      forceLogout('Session expired. Please login again.');
+    }, initial.delay);
+
+    // Defensive checks (handles laptop sleep / background tab timer throttling).
+    const interval = setInterval(() => {
+      checkExpiry();
+    }, 30_000);
+
+    const onVisibilityOrFocus = () => {
+      checkExpiry();
+    };
+
+    window.addEventListener('focus', onVisibilityOrFocus);
+    document.addEventListener('visibilitychange', onVisibilityOrFocus);
+
+    return () => {
+      clearTimeout(expiryTimeout);
+      clearInterval(interval);
+      window.removeEventListener('focus', onVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', onVisibilityOrFocus);
+    };
+  }, [token]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     if (token && savedUser) {
       const expiryMs = getTokenExpiryMs(token);
-      if (expiryMs && expiryMs <= Date.now()) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        setUser(null);
-        setShowLogin(true);
+      if (!expiryMs || expiryMs <= Date.now()) {
+        forceLogout('Session expired. Please login again.');
         return;
       }
+      setToken(token);
       setUser(JSON.parse(savedUser));
     }
   }, []);
 
-  const handleLogin = (userData) => {
+  const handleLogin = (userData, tokenFromLogin) => {
+    if (tokenFromLogin) setToken(tokenFromLogin);
     setUser(userData);
     setShowLogin(false);
   };
@@ -89,6 +117,7 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    setToken(null);
     setUser(null);
     showToast('Logged out successfully', 'info');
   };

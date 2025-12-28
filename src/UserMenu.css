@@ -151,6 +151,44 @@
   background: #545b62;
 }
 
+.badge-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.badge-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  display: block;
+}
+
+.badge-img--locked {
+  filter: grayscale(100%);
+  opacity: 0.35;
+}
+
+.badge-img--placeholder {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, #e1e8ed);
+  background: var(--hover-bg, rgba(0, 0, 0, 0.05));
+}
+
+.badge-label {
+  font-size: 0.95rem;
+  color: var(--text-color, #2c3e50);
+}
+
 @media (max-width: 768px) {
   .user-menu {
     width: 90%;

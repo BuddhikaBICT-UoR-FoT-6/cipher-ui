@@ -24,12 +24,35 @@ describe('UserMenu', () => {
   });
 
   test('shows confirm dialog and can cancel', async () => {
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        user: {},
+        stats: { challenges_completed: 0, total_points: 0 },
+        badges: [],
+        badgeAssets: [
+          { badge: 'bronze', url_path: '/badges/Bronze.png' },
+          { badge: 'silver', url_path: '/badges/Silver.png' },
+          { badge: 'gold', url_path: '/badges/Gold.jpg' },
+          { badge: 'diamond', url_path: '/badges/Diamond.png' },
+        ],
+      }),
+    });
+
     render(
       <UserMenu
         user={{ username: 'alice', email: 'alice@example.com', role: 'user' }}
         onLogout={jest.fn()}
         onClose={jest.fn()}
       />
+    );
+
+    await waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith(
+        'http://localhost:3001/api/me/profile',
+        expect.objectContaining({ headers: expect.any(Object) })
+      )
     );
 
     await userEvent.click(screen.getByRole('button', { name: /deactivate account/i }));
@@ -42,6 +65,24 @@ describe('UserMenu', () => {
   test('deactivate calls API and onLogout on success', async () => {
     const onLogout = jest.fn();
 
+    // profile fetch
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        user: {},
+        stats: { challenges_completed: 2, total_points: 10 },
+        badges: [],
+        badgeAssets: [
+          { badge: 'bronze', url_path: '/badges/Bronze.png' },
+          { badge: 'silver', url_path: '/badges/Silver.png' },
+          { badge: 'gold', url_path: '/badges/Gold.jpg' },
+          { badge: 'diamond', url_path: '/badges/Diamond.png' },
+        ],
+      }),
+    });
+
+    // deactivate
     fetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -56,10 +97,21 @@ describe('UserMenu', () => {
       />
     );
 
+    await waitFor(() =>
+      expect(fetch).toHaveBeenCalledWith(
+        'http://localhost:3001/api/me/profile',
+        expect.objectContaining({ headers: expect.any(Object) })
+      )
+    );
+
     await userEvent.click(screen.getByRole('button', { name: /deactivate account/i }));
     await userEvent.click(screen.getByRole('button', { name: /yes, deactivate/i }));
 
     await waitFor(() => expect(onLogout).toHaveBeenCalled());
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:3001/api/me/profile',
+      expect.objectContaining({ headers: expect.any(Object) })
+    );
     expect(fetch).toHaveBeenCalledWith(
       'http://localhost:3001/api/user/deactivate',
       expect.objectContaining({ method: 'PUT' })
