@@ -291,42 +291,6 @@ const CryptanalysisChallenge = ({ user, onClose }) => {
     return startIndex;
   };
 
-  const findEasierUnresolvedIndex = () => {
-    const currentRank = difficultyRank(active?.difficulty);
-    const resolved = new Set(resolvedIds);
-    const currentPoints = Number(active?.points) || 0;
-    const candidates = orderIds
-      .map((id, i) => ({ id, i, c: challengesById.get(id) }))
-      .filter(({ id, c }) => c && !resolved.has(id));
-
-    // Prefer strictly easier difficulty.
-    const easier = candidates
-      .filter(({ c }) => difficultyRank(c.difficulty) < currentRank)
-      .sort((a, b) => {
-        const dr = difficultyRank(a.c.difficulty) - difficultyRank(b.c.difficulty);
-        if (dr !== 0) return dr;
-        const pr = (Number(a.c.points) || 0) - (Number(b.c.points) || 0);
-        if (pr !== 0) return pr;
-        return (Number(a.c.id) || 0) - (Number(b.c.id) || 0);
-      });
-    if (easier.length) return easier[0].i;
-
-    // If no easier exists, prefer same difficulty but lower points.
-    const sameLowerPoints = candidates
-      .filter(({ c }) => difficultyRank(c.difficulty) === currentRank && (Number(c.points) || 0) < currentPoints)
-      .sort((a, b) => {
-        const pr = (Number(a.c.points) || 0) - (Number(b.c.points) || 0);
-        if (pr !== 0) return pr;
-        return (Number(a.c.id) || 0) - (Number(b.c.id) || 0);
-      });
-    if (sameLowerPoints.length) return sameLowerPoints[0].i;
-
-    // Otherwise, just pick the next unresolved that's not the current one.
-    const different = candidates.filter(({ id }) => id !== active?.id);
-    if (different.length) return different[0].i;
-    return null;
-  };
-
   const resetPrompt = () => setPrompt(null);
 
   const applyLowerDifficulty = () => {
