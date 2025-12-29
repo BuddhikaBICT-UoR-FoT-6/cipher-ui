@@ -39,9 +39,18 @@ The backend automatically creates these tables:
 - **`custom_ciphers`** - User-created cipher algorithms
 - **`saved_messages`** - Encrypted/decrypted message history
 
+### **Email + Security Tables:**
+- **`email_otps`** - OTPs (hashed) for registration, reset, and sensitive actions
+- **`email_event_log`** - Cooldowns for OTP resend / security notifications
+- **`system_email_settings`** - Admin-configurable email settings (SMTP/Ethereal)
+
 ### **Analytics Tables:**
 - **`cipher_history`** - Usage tracking and performance metrics
 - **`user_stats`** - User activity statistics and achievements
+
+### **Badges:**
+- **`user_badges`** - Earned badges per user
+- **`badge_assets`** - Badge image metadata served from `/badges/*`
 
 ### **Future Feature Tables:**
 - **`cipher_challenges`** - Puzzle games and challenges
@@ -98,6 +107,11 @@ CREATE TABLE custom_ciphers (
 curl http://localhost:3001/api/health
 ```
 
+On Windows PowerShell, you can also run:
+```powershell
+Invoke-RestMethod http://localhost:3001/api/health
+```
+
 ### Expected Response:
 ```json
 {
@@ -109,7 +123,11 @@ curl http://localhost:3001/api/health
     "Message History",
     "User Statistics",
     "Public Cipher Gallery",
-    "Cipher Usage Tracking"
+    "Cipher Usage Tracking",
+    "Admin Dashboard",
+    "Cipher Challenges",
+    "Saved Messages",
+    "Cipher Sharing"
   ]
 }
 ```
@@ -123,11 +141,16 @@ SHOW TABLES;
 ### Expected Tables:
 - users
 - custom_ciphers
+- email_otps
+- email_event_log
+- system_email_settings
 - cipher_history
 - saved_messages
 - cipher_challenges
 - user_challenge_attempts
 - user_stats
+- user_badges
+- badge_assets
 - shared_ciphers
 
 ---
@@ -146,6 +169,8 @@ SHOW TABLES;
 
 **Port Conflict:**
 - Change PORT in `.env` if 3001 is in use
+
+Tip: This repo contains two backend copies (`backend/` and `cipher-ui/backend/`). Run only one at a time to avoid port conflicts and confusing 404s.
 
 ### Reset Database:
 ```sql

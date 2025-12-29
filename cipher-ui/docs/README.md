@@ -13,6 +13,9 @@ This directory contains comprehensive documentation for the Cipher Project React
   - `ThemeToggle.md` - Theme toggle button
   - `ThemeContext.md` - Theme context provider
 
+Note: The app has grown beyond this list (e.g., Admin dashboard, OTP flows, toasts, user menu, history).
+If a component isn't listed here, refer to the source in `src/` or extend the generator script to include it.
+
 ### HTML Versions
 Each markdown file has a corresponding HTML version with professional styling:
 - **`API-Documentation.html`** - Styled complete documentation
@@ -200,6 +203,4 @@ docs/
 
 ---
 
-**Generated:** ${new Date().toLocaleDateString()}  
-**Project:** Cipher Algorithms Implementation  
-**Version:** 1.0.0
+If you change public APIs or add major UI components, re-run `npm run docs:all` and review the generated output before committing.

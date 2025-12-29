@@ -27,8 +27,19 @@ CipherProject is a full‑stack learning and demo application for classic crypto
 
 ### Auth + administration
 - **JWT authentication** (1 hour expiry).
-- Account **deactivate** / **delete** flows.
-- Admin dashboard for user management.
+- Account **deactivate** / **delete** flows (OTP protected).
+- **Email OTP security flows**:
+	- Registration requires an email OTP.
+	- Forgot-password reset uses email OTP.
+	- Sensitive actions (deactivate/delete) require email OTP.
+- Admin dashboard for user management + system email configuration.
+
+### Email delivery
+- Admin-configurable email settings stored in the database (SMTP/Ethereal).
+- SMTP password is encrypted at rest (AES-256-GCM; key derived from `EMAIL_SETTINGS_ENC_KEY` or `JWT_SECRET`).
+- Dev helpers:
+	- `EMAIL_PROVIDER=ethereal` for safe local inbox previews (disabled in production).
+	- `DEV_PRINT_OTPS=true` to print OTPs to the server console (non-production only).
 
 ### UI/UX
 - Responsive layout with **light/dark theme**.
@@ -99,6 +110,11 @@ DB_PASSWORD=your_mysql_password
 DB_NAME=cipher_db
 JWT_SECRET=cipher_secret_key_2024_secure
 PORT=3001
+
+# Optional (recommended for local dev)
+# EMAIL_PROVIDER=ethereal
+# DEV_PRINT_OTPS=true
+# EMAIL_SETTINGS_ENC_KEY=<any long random string>
 ```
 
 Start the server:
@@ -108,6 +124,9 @@ npm start
 ```
 
 The API runs at `http://localhost:3001`.
+
+Note: This repo contains two backend copies: [backend/](backend/) and [cipher-ui/backend/](cipher-ui/backend/).
+For development, run **only one** to avoid port conflicts, and make sure the UI is talking to the one you started.
 
 ### 3) Frontend (React UI)
 
@@ -151,8 +170,11 @@ npm run docs:all
 Base URL: `http://localhost:3001`
 
 Auth
+- `POST /api/auth/register/request-otp`
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/forgot-password/request-otp`
+- `POST /api/auth/reset-password`
 
 Profile / badges
 - `GET /api/me/profile`
@@ -165,14 +187,25 @@ Cryptanalysis Challenge
 - `POST /api/challenges/generate-easy` (used for “Lower difficulty”)
 
 User lifecycle
+- `POST /api/user/deactivate/request-otp`
 - `PUT /api/user/deactivate`
+- `POST /api/user/delete/request-otp`
 - `DELETE /api/user/delete`
+
+Admin
+- `GET /api/admin/email-settings`
+- `PUT /api/admin/email-settings`
+- `POST /api/admin/users`
+- `GET /api/admin/users`
+- `PUT /api/admin/users/:id`
+- `DELETE /api/admin/users/:id`
 
 ## 🛠 Troubleshooting
 
 - **Backend can’t connect to DB**: verify MySQL is running and `backend/.env` credentials match.
 - **Port already in use**: change `PORT` in `backend/.env` or stop the conflicting process.
 - **Frontend can’t call backend**: ensure backend is running on `http://localhost:3001`.
+- **Delete button / actions “do nothing”**: confirm the backend on `3001` is the one you started (avoid running both backend copies).
 
 ## 📄 Notes
 
