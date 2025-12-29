@@ -10,6 +10,9 @@
   align-items: center;
   z-index: 1000;
   animation: fadeIn 0.3s ease-out;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .login-card {
@@ -19,10 +22,16 @@
   padding: 40px;
   width: 90%;
   max-width: 400px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
   animation: slideUp 0.4s ease-out;
   position: relative;
+}
+
+.login-card--split {
+  max-width: 760px;
 }
 
 .dark-theme .login-card {
@@ -86,6 +95,69 @@
 .dark-theme .login-header p {
   color: #ffffff;
   opacity: 0.8;
+}
+
+.auth-instructions {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.18);
+  color: #2c3e50;
+}
+
+.dark-theme .auth-instructions {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.auth-instructions-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.auth-instructions-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.9rem;
+}
+
+.auth-instructions-list li {
+  margin: 4px 0;
+}
+
+.auth-instructions-hint {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.auth-split {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.auth-split-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.auth-split-right {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .login-card--split {
+    max-width: 400px;
+  }
+
+  .auth-split {
+    flex-direction: column;
+  }
 }
 
 .login-form {

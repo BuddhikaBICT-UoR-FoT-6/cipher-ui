@@ -186,28 +186,31 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
   return (
     <div className="user-menu-overlay" onClick={onClose}>
       <div className="user-menu" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="user-menu-close-btn" onClick={onClose} aria-label="Close">
+          ×
+        </button>
         <div className="user-info">
           <h3>👤 {user.username || user.email}</h3>
-          <p>{user.email}</p>
+          <p className="user-email">{user.email}</p>
           <span className={`role-badge ${user.role}`}>{user.role}</span>
         </div>
 
         <div className="menu-actions">
           <div style={{ padding: '10px 0' }}>
-            <h4 style={{ margin: '0 0 8px 0' }}>🏅 Profile</h4>
+            <h4 className="profile-title" style={{ margin: '0 0 8px 0' }}>🏅 Profile</h4>
             {profileLoading ? (
-              <p style={{ margin: 0, opacity: 0.85 }}>Loading stats…</p>
+              <p className="profile-text" style={{ margin: 0, opacity: 0.85 }}>Loading stats…</p>
             ) : (
               <>
-                <p style={{ margin: '0 0 6px 0' }}>
+                <p className="profile-text" style={{ margin: '0 0 6px 0' }}>
                   Challenges completed: <strong>{profileStats?.challenges_completed ?? 0}</strong>
                 </p>
-                <p style={{ margin: '0 0 10px 0' }}>
+                <p className="profile-text" style={{ margin: '0 0 10px 0' }}>
                   Total points: <strong>{profileStats?.total_points ?? 0}</strong>
                 </p>
 
                 <div>
-                  <p style={{ margin: '0 0 6px 0' }}>
+                  <p className="profile-text" style={{ margin: '0 0 6px 0' }}>
                     Badges:
                   </p>
                   <div className="badge-row" aria-label="Badges">

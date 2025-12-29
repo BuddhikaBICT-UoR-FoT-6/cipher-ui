@@ -3,22 +3,27 @@ import { showToast } from './Toast';
 import './Login.css';
 
 const Login = ({ onLogin, onClose }) => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState('login');
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
-    otp: ''
+    otp: '',
+    newPassword: ''
   });
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const isLogin = mode === 'login';
+  const isRegister = mode === 'register';
+  const isReset = mode === 'reset';
+
   const resetToLogin = () => {
-    setIsLogin(true);
+    setMode('login');
     setError('');
     setOtpSent(false);
-    setFormData({ username: '', email: '', password: '', otp: '' });
+    setFormData({ username: '', email: '', password: '', otp: '', newPassword: '' });
   };
 
   useEffect(() => {
@@ -33,7 +38,16 @@ const Login = ({ onLogin, onClose }) => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
-  const requestOtp = async () => {
+  const requestRegisterOtp = async () => {
+    const trimmedUsername = String(formData.username || '').trim();
+    const trimmedEmail = String(formData.email || '').trim();
+    if (!trimmedUsername || !trimmedEmail) {
+      const errorMsg = 'Please enter username and email first';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
@@ -41,8 +55,8 @@ const Login = ({ onLogin, onClose }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
+          username: trimmedUsername,
+          email: trimmedEmail,
         }),
       });
 
@@ -64,32 +78,99 @@ const Login = ({ onLogin, onClose }) => {
     }
   };
 
+  const requestResetOtp = async () => {
+    const trimmedEmail = String(formData.email || '').trim();
+    if (!trimmedEmail) {
+      const errorMsg = 'Please enter your email first';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('http://localhost:3001/api/auth/forgot-password/request-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmedEmail }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setOtpSent(true);
+        showToast(data.message || 'OTP sent to your email (if the account exists)', 'success');
+      } else {
+        const errorMsg = data.message || 'Failed to send OTP';
+        setError(errorMsg);
+        showToast(errorMsg, 'error');
+      }
+    } catch {
+      const errorMsg = 'Connection error. Please try again.';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      let endpoint = '/api/auth/login';
+      if (isRegister) endpoint = '/api/auth/register';
+      if (isReset) endpoint = '/api/auth/reset-password';
 
-      if (!isLogin && (!otpSent || !String(formData.otp || '').trim())) {
+      if (isRegister && (!otpSent || !String(formData.otp || '').trim())) {
         const errorMsg = 'Please request and enter the OTP sent to your email';
         setError(errorMsg);
         showToast(errorMsg, 'error');
         return;
       }
 
+      if (isReset) {
+        if (!otpSent || !String(formData.otp || '').trim()) {
+          const errorMsg = 'Please request and enter the OTP sent to your email';
+          setError(errorMsg);
+          showToast(errorMsg, 'error');
+          return;
+        }
+        if (!String(formData.newPassword || '').trim()) {
+          const errorMsg = 'Please enter a new password';
+          setError(errorMsg);
+          showToast(errorMsg, 'error');
+          return;
+        }
+      }
+
+      const body = isReset
+        ? {
+            email: formData.email,
+            otp: formData.otp,
+            newPassword: formData.newPassword,
+          }
+        : formData;
+
       const response = await fetch(`http://localhost:3001${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        if (isReset) {
+          showToast(data.message || 'Password reset successful. Please login.', 'success');
+          resetToLogin();
+          return;
+        }
+
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         showToast(isLogin ? 'Login successful!' : 'Registration successful! Welcome!', 'success');
@@ -117,15 +198,114 @@ const Login = ({ onLogin, onClose }) => {
 
   return (
     <div className="login-container">
-      <div className="login-card">
+      <div className={`login-card ${isRegister ? 'login-card--split' : ''}`}>
         <button className="close-btn" onClick={() => (typeof onClose === 'function' ? onClose() : resetToLogin())}>×</button>
         <div className="login-header">
-          <h2>🔐 {isLogin ? 'Login' : 'Register'}</h2>
+          <h2>🔐 {isLogin ? 'Login' : (isRegister ? 'Register' : 'Reset Password')}</h2>
           <p>Access Custom Cipher Builder</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          {!isLogin && (
+        {isRegister ? (
+          <div className="auth-split">
+            <div className="auth-split-left">
+              <div className="auth-instructions" role="note" aria-label="Registration instructions">
+                <div className="auth-instructions-title">How registration works</div>
+                <ol className="auth-instructions-list">
+                  <li>Enter a username, email, and password.</li>
+                  <li>Click <strong>Send OTP</strong> to receive a 6-digit code in your email.</li>
+                  <li>Enter the OTP in the OTP field.</li>
+                  <li>Click <strong>Register</strong> to create your account.</li>
+                </ol>
+                <div className="auth-instructions-hint">
+                  Note: If you don’t receive the OTP, check spam/junk or ask an admin to configure Email Settings.
+                </div>
+              </div>
+            </div>
+
+            <div className="auth-split-right">
+              <form onSubmit={handleSubmit} className="login-form">
+                <div className="form-group">
+                  <label>Username:</label>
+                  <input
+                    type="text"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    required={isRegister}
+                    placeholder="Enter username"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Email:</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter email"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Password:</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter password"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>OTP:</label>
+                  <input
+                    type="text"
+                    name="otp"
+                    value={formData.otp}
+                    onChange={handleChange}
+                    placeholder="Enter OTP"
+                    inputMode="numeric"
+                  />
+                  <button
+                    type="button"
+                    onClick={requestRegisterOtp}
+                    disabled={loading}
+                    className="toggle-btn"
+                    style={{ marginTop: 8 }}
+                  >
+                    {otpSent ? 'Resend OTP' : 'Send OTP'}
+                  </button>
+                </div>
+
+                {error && <div className="error-message">{error}</div>}
+
+                <button
+                  type="submit"
+                  disabled={loading || (!otpSent || !String(formData.otp || '').trim())}
+                  className="login-btn"
+                >
+                  {loading ? 'Processing...' : 'Register'}
+                </button>
+
+                <button
+                  type="button"
+                  className="toggle-btn"
+                  style={{ marginTop: 10, width: '100%' }}
+                  onClick={resetToLogin}
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+              </form>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="login-form">
+          {isRegister && (
             <div className="form-group">
               <label>Username:</label>
               <input
@@ -133,7 +313,7 @@ const Login = ({ onLogin, onClose }) => {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                required={!isLogin}
+                required={isRegister}
                 placeholder="Enter username"
               />
             </div>
@@ -151,19 +331,35 @@ const Login = ({ onLogin, onClose }) => {
             />
           </div>
 
-          <div className="form-group">
-            <label>Password:</label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              placeholder="Enter password"
-            />
-          </div>
+          {(isLogin || isRegister) && (
+            <div className="form-group">
+              <label>Password:</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                placeholder="Enter password"
+              />
+            </div>
+          )}
 
-          {!isLogin && (
+          {isReset && (
+            <div className="form-group">
+              <label>New Password:</label>
+              <input
+                type="password"
+                name="newPassword"
+                value={formData.newPassword}
+                onChange={handleChange}
+                required
+                placeholder="Enter new password"
+              />
+            </div>
+          )}
+
+          {(isRegister || isReset) && (
             <div className="form-group">
               <label>OTP:</label>
               <input
@@ -176,7 +372,7 @@ const Login = ({ onLogin, onClose }) => {
               />
               <button
                 type="button"
-                onClick={requestOtp}
+                onClick={isRegister ? requestRegisterOtp : requestResetOtp}
                 disabled={loading}
                 className="toggle-btn"
                 style={{ marginTop: 8 }}
@@ -188,8 +384,15 @@ const Login = ({ onLogin, onClose }) => {
 
           {error && <div className="error-message">{error}</div>}
 
-          <button type="submit" disabled={loading || (!isLogin && (!otpSent || !String(formData.otp || '').trim()))} className="login-btn">
-            {loading ? 'Processing...' : (isLogin ? 'Login' : 'Register')}
+          <button
+            type="submit"
+            disabled={
+              loading ||
+              ((isRegister || isReset) && (!otpSent || !String(formData.otp || '').trim()))
+            }
+            className="login-btn"
+          >
+            {loading ? 'Processing...' : (isLogin ? 'Login' : (isRegister ? 'Register' : 'Reset Password'))}
           </button>
 
           {!isLogin && (
@@ -203,19 +406,37 @@ const Login = ({ onLogin, onClose }) => {
               Cancel
             </button>
           )}
-        </form>
+          </form>
+        )}
 
         <div className="login-footer">
+          {isLogin && (
+            <p>
+              <button
+                type="button"
+                className="toggle-btn"
+                onClick={() => {
+                  setMode('reset');
+                  setError('');
+                  setOtpSent(false);
+                  setFormData({ username: '', email: formData.email, password: '', otp: '', newPassword: '' });
+                }}
+              >
+                Forgot password?
+              </button>
+            </p>
+          )}
+
           <p>
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button
               type="button"
               onClick={() => {
                 if (isLogin) {
-                  setIsLogin(false);
+                  setMode('register');
                   setError('');
                   setOtpSent(false);
-                  setFormData({ username: '', email: '', password: '', otp: '' });
+                  setFormData({ username: '', email: '', password: '', otp: '', newPassword: '' });
                 } else {
                   resetToLogin();
                 }

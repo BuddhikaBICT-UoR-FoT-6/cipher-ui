@@ -182,6 +182,27 @@ const ensureCipherHistoryColumns = async () => {
   }
 };
 
+const ensureEmailOtpsPurposeSupportsReset = async () => {
+  try {
+    const [rows] = await db.execute(
+      `SELECT COLUMN_TYPE
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'email_otps' AND COLUMN_NAME = 'purpose'
+       LIMIT 1`,
+      [dbConfig.database]
+    );
+
+    const columnType = String(rows?.[0]?.COLUMN_TYPE || '').toLowerCase();
+    if (columnType.includes("'reset'")) return;
+
+    await db.execute(
+      "ALTER TABLE email_otps MODIFY COLUMN purpose ENUM('register', 'deactivate', 'delete', 'reset') NOT NULL"
+    );
+  } catch (e) {
+    console.warn('Email OTP purpose migration skipped:', e?.message || e);
+  }
+};
+
 const createEmailNotConfiguredError = () => {
   const error = new Error(
     'Email service is not configured. Configure SMTP in backend .env or set it from the Admin Dashboard (or set EMAIL_PROVIDER=ethereal for local dev)'
@@ -393,7 +414,7 @@ async function initDatabase() {
       CREATE TABLE IF NOT EXISTS email_otps (
         id INT AUTO_INCREMENT PRIMARY KEY,
         email VARCHAR(100) NOT NULL,
-        purpose ENUM('register', 'deactivate', 'delete') NOT NULL,
+        purpose ENUM('register', 'deactivate', 'delete', 'reset') NOT NULL,
         otp_hash VARCHAR(255) NOT NULL,
         expires_at TIMESTAMP NOT NULL,
         consumed_at TIMESTAMP NULL,
@@ -403,6 +424,8 @@ async function initDatabase() {
         INDEX idx_expires (expires_at)
       )
     `);
+
+    await ensureEmailOtpsPurposeSupportsReset();
 
     await db.execute(`
       CREATE TABLE IF NOT EXISTS email_event_log (
@@ -852,6 +875,68 @@ app.post('/api/auth/register', async (req, res) => {
     });
   } catch (error) {
     console.error('Register error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Forgot password (OTP reset)
+app.post('/api/auth/forgot-password/request-otp', async (req, res) => {
+  try {
+    const normalizedEmail = normalizeEmail(req.body?.email);
+    if (!normalizedEmail) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Avoid leaking whether the email exists.
+    const [users] = await db.execute('SELECT id FROM users WHERE email = ? LIMIT 1', [normalizedEmail]);
+
+    if (users.length > 0) {
+      try {
+        await createAndSendOtp({ email: normalizedEmail, purpose: 'reset', eventType: 'otp_reset' });
+      } catch (e) {
+        if (e?.statusCode) return res.status(e.statusCode).json({ message: e.message });
+        throw e;
+      }
+    }
+
+    return res.json({ message: 'If an account exists for that email, an OTP has been sent.' });
+  } catch (error) {
+    console.error('Forgot password OTP error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const normalizedEmail = normalizeEmail(req.body?.email);
+    const otpValue = String(req.body?.otp || '').trim();
+    const newPassword = String(req.body?.newPassword || '').trim();
+
+    if (!normalizedEmail || !otpValue || !newPassword) {
+      return res.status(400).json({ message: 'Email, OTP and newPassword are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    const otpResult = await verifyOtp({ email: normalizedEmail, purpose: 'reset', otp: otpValue });
+    if (!otpResult.ok) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    const [users] = await db.execute('SELECT id FROM users WHERE email = ? LIMIT 1', [normalizedEmail]);
+    if (users.length === 0) {
+      // Keep response generic.
+      return res.json({ message: 'If the account exists, the password has been reset.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.execute('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, users[0].id]);
+
+    return res.json({ message: 'Password reset successful. Please login.' });
+  } catch (error) {
+    console.error('Reset password error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

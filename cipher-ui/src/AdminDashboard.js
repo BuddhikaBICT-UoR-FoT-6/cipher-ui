@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { showToast } from './Toast';
+import { showConfirmToast, showToast } from './Toast';
 import './AdminDashboard.css';
 
 const AdminDashboard = ({ user, onClose }) => {
@@ -182,9 +182,7 @@ const AdminDashboard = ({ user, onClose }) => {
     }
   };
 
-  const deleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
-    
+  const performDeleteUser = async (userId) => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:3001/api/admin/users/${userId}`, {
@@ -193,7 +191,7 @@ const AdminDashboard = ({ user, onClose }) => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (response.ok) {
         fetchUsers();
         fetchStats();
@@ -205,6 +203,16 @@ const AdminDashboard = ({ user, onClose }) => {
       console.error('Error deleting user:', error);
       showToast('Error deleting user', 'error');
     }
+  };
+
+  const deleteUser = (userId) => {
+    showConfirmToast({
+      message: 'Are you sure you want to delete this user?',
+      type: 'warning',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: () => performDeleteUser(userId),
+    });
   };
 
   const toggleUserStatus = (userId, currentStatus) => {
@@ -393,6 +401,14 @@ const AdminDashboard = ({ user, onClose }) => {
         {showAddUser && (
           <div className="add-user-modal">
             <div className="modal-content">
+              <button
+                type="button"
+                className="close-btn"
+                onClick={() => setShowAddUser(false)}
+                aria-label="Close"
+              >
+                ×
+              </button>
               <h3>Add New User</h3>
               <input
                 type="text"

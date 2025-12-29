@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS email_otps (
 	id INT AUTO_INCREMENT PRIMARY KEY,
 	email VARCHAR(100) NOT NULL,
-	purpose ENUM('register', 'deactivate', 'delete') NOT NULL,
+	purpose ENUM('register', 'deactivate', 'delete', 'reset') NOT NULL,
 	otp_hash VARCHAR(255) NOT NULL,
 	expires_at TIMESTAMP NOT NULL,
 	consumed_at TIMESTAMP NULL,

@@ -6,6 +6,7 @@ import AdminDashboard from './AdminDashboard';
 jest.mock('./Toast', () => ({
   __esModule: true,
   showToast: jest.fn(),
+  showConfirmToast: jest.fn(),
 }));
 
 describe('AdminDashboard', () => {
@@ -13,7 +14,6 @@ describe('AdminDashboard', () => {
     localStorage.clear();
     localStorage.setItem('token', 'jwt');
     global.fetch = jest.fn();
-    window.confirm = jest.fn(() => true);
   });
 
   afterEach(() => {

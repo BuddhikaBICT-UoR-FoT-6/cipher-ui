@@ -15,7 +15,8 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 10px;
   min-width: 300px;
   max-width: 400px;
   animation: slideIn 0.3s ease-out;
@@ -49,6 +50,35 @@
 .toast-message {
   flex: 1;
   font-weight: 500;
+}
+
+.toast-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.toast-action {
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.08);
+  color: inherit;
+}
+
+.toast-action:hover {
+  filter: brightness(0.95);
+}
+
+.toast-action--confirm {
+  background: rgba(220, 53, 69, 0.15);
+}
+
+.toast-action--cancel {
+  background: rgba(0, 0, 0, 0.08);
 }
 
 .toast-close {
