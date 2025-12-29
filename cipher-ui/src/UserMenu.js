@@ -4,6 +4,9 @@ import './UserMenu.css';
 
 const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
   const [showConfirm, setShowConfirm] = useState(null);
+  const [actionOtpSent, setActionOtpSent] = useState(false);
+  const [actionOtp, setActionOtp] = useState('');
+  const [actionOtpLoading, setActionOtpLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileStats, setProfileStats] = useState(null);
   const [profileBadges, setProfileBadges] = useState([]);
@@ -51,6 +54,12 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
     };
   }, [user, token]);
 
+  useEffect(() => {
+    setActionOtpSent(false);
+    setActionOtp('');
+    setActionOtpLoading(false);
+  }, [showConfirm]);
+
   const hasBadge = (badge) => profileBadges.some((b) => (b?.badge || '').toLowerCase() === badge);
 
   const badgeAssetMap = useMemo(() => {
@@ -62,22 +71,66 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
     return map;
   }, [profileBadgeAssets]);
 
-  const deactivateAccount = async () => {
+  const requestActionOtp = async (action) => {
     try {
       const token = localStorage.getItem('token');
-      console.log('Deactivating account with token:', token);
-      
-      const response = await fetch('http://localhost:3001/api/user/deactivate', {
-        method: 'PUT',
+      if (!token) {
+        showToast('You must be logged in', 'error');
+        return;
+      }
+
+      setActionOtpLoading(true);
+      const endpoint = action === 'deactivate'
+        ? 'http://localhost:3001/api/user/deactivate/request-otp'
+        : 'http://localhost:3001/api/user/delete/request-otp';
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
       });
 
-      console.log('Deactivate response:', response.status);
       const data = await response.json();
-      console.log('Response data:', data);
+      if (response.ok) {
+        setActionOtpSent(true);
+        showToast('OTP sent to your email', 'success');
+      } else {
+        showToast(data.message || 'Failed to send OTP', 'error');
+      }
+    } catch (error) {
+      console.error('OTP request error:', error);
+      showToast('Error sending OTP', 'error');
+    } finally {
+      setActionOtpLoading(false);
+    }
+  };
+
+  const deactivateAccount = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showToast('You must be logged in', 'error');
+        return;
+      }
+
+      const otpValue = String(actionOtp || '').trim();
+      if (!otpValue) {
+        showToast('OTP is required', 'error');
+        return;
+      }
+
+      const response = await fetch('http://localhost:3001/api/user/deactivate', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ otp: otpValue })
+      });
+
+      const data = await response.json();
 
       if (response.ok) {
         showToast('Account deactivated successfully', 'success');
@@ -95,12 +148,24 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
   const deleteAccount = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        showToast('You must be logged in', 'error');
+        return;
+      }
+
+      const otpValue = String(actionOtp || '').trim();
+      if (!otpValue) {
+        showToast('OTP is required', 'error');
+        return;
+      }
+
       const response = await fetch('http://localhost:3001/api/user/delete', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({ otp: otpValue })
       });
 
       const data = await response.json();
@@ -216,10 +281,35 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
                 : 'Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be lost.'
               }
             </p>
+
+            {!actionOtpSent ? (
+              <div style={{ margin: '10px 0' }}>
+                <button
+                  className="confirm-btn"
+                  onClick={() => requestActionOtp(showConfirm)}
+                  disabled={actionOtpLoading}
+                >
+                  {actionOtpLoading ? 'Sending OTP...' : 'Send OTP'}
+                </button>
+              </div>
+            ) : (
+              <div className="form-group" style={{ margin: '10px 0' }}>
+                <label>OTP:</label>
+                <input
+                  type="text"
+                  value={actionOtp}
+                  onChange={(e) => setActionOtp(e.target.value)}
+                  placeholder="Enter OTP"
+                  inputMode="numeric"
+                />
+              </div>
+            )}
+
             <div className="confirm-actions">
               <button 
                 className="confirm-btn"
                 onClick={showConfirm === 'deactivate' ? deactivateAccount : deleteAccount}
+                disabled={!actionOtpSent || !String(actionOtp || '').trim()}
               >
                 Yes, {showConfirm === 'deactivate' ? 'Deactivate' : 'Delete'}
               </button>

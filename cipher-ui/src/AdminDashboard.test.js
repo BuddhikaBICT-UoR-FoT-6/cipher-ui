@@ -39,6 +39,19 @@ describe('AdminDashboard', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ totalUsers: 1, totalCiphers: 0, activeUsers: 1 }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          enabled: true,
+          provider: 'smtp',
+          smtpHost: 'smtp.gmail.com',
+          smtpPort: 587,
+          smtpSecure: false,
+          smtpUser: 'sender@example.com',
+          emailFrom: 'sender@example.com',
+          hasSmtpPass: true,
+        }),
       });
 
     render(<AdminDashboard user={{ role: 'admin' }} onClose={jest.fn()} />);
@@ -46,6 +59,7 @@ describe('AdminDashboard', () => {
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
 
     expect(await screen.findByText(/admin dashboard/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^email settings$/i })).toBeInTheDocument();
     expect(screen.getByText(/total users/i)).toBeInTheDocument();
     expect(screen.getAllByText('1').length).toBeGreaterThan(0);
     expect(screen.getByText(/alice@example.com/i)).toBeInTheDocument();
@@ -54,7 +68,20 @@ describe('AdminDashboard', () => {
   test('opens add user modal', async () => {
     fetch
       .mockResolvedValueOnce({ ok: true, json: async () => [] })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          enabled: true,
+          provider: 'smtp',
+          smtpHost: 'smtp.gmail.com',
+          smtpPort: 587,
+          smtpSecure: false,
+          smtpUser: '',
+          emailFrom: '',
+          hasSmtpPass: false,
+        }),
+      });
 
     render(<AdminDashboard user={{ role: 'admin' }} onClose={jest.fn()} />);
 

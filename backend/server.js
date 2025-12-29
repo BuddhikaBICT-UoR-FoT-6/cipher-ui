@@ -1,8 +1,10 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
 const path = require('path');
 require('dotenv').config();
 
@@ -25,6 +27,330 @@ const dbConfig = {
 };
 
 let db;
+
+const APP_NAME = process.env.APP_NAME || 'Cipher Project';
+const OTP_EXPIRY_MINUTES = Number.parseInt(process.env.OTP_EXPIRY_MINUTES || '10', 10);
+const OTP_RESEND_COOLDOWN_SECONDS = Number.parseInt(process.env.OTP_RESEND_COOLDOWN_SECONDS || '60', 10);
+const FAILED_LOGIN_EMAIL_COOLDOWN_SECONDS = Number.parseInt(process.env.FAILED_LOGIN_EMAIL_COOLDOWN_SECONDS || '300', 10);
+const EMAIL_PROVIDER = String(process.env.EMAIL_PROVIDER || 'smtp').trim().toLowerCase();
+
+const getEmailSettingsEncryptionKey = () => {
+  const raw = String(process.env.EMAIL_SETTINGS_ENC_KEY || '').trim();
+  if (raw) {
+    if (/^[0-9a-f]{64}$/i.test(raw)) return Buffer.from(raw, 'hex');
+    return crypto.createHash('sha256').update(raw).digest();
+  }
+  return crypto.createHash('sha256').update(String(process.env.JWT_SECRET || 'cipher_secret_key')).digest();
+};
+
+const encryptSecret = (plaintext) => {
+  const plain = String(plaintext || '');
+  if (!plain) return '';
+  const key = getEmailSettingsEncryptionKey();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const ciphertext = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return [iv.toString('base64'), tag.toString('base64'), ciphertext.toString('base64')].join('.');
+};
+
+const decryptSecret = (payload) => {
+  const text = String(payload || '').trim();
+  if (!text) return '';
+  const parts = text.split('.');
+  if (parts.length !== 3) return '';
+  const [ivB64, tagB64, dataB64] = parts;
+  const key = getEmailSettingsEncryptionKey();
+  const iv = Buffer.from(ivB64, 'base64');
+  const tag = Buffer.from(tagB64, 'base64');
+  const data = Buffer.from(dataB64, 'base64');
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(tag);
+  const plaintext = Buffer.concat([decipher.update(data), decipher.final()]);
+  return plaintext.toString('utf8');
+};
+
+let emailSettingsCache = null;
+const getEffectiveEmailSettings = () => {
+  const cached = emailSettingsCache && emailSettingsCache.enabled ? emailSettingsCache : null;
+  const provider = (cached?.provider || EMAIL_PROVIDER || 'smtp').trim().toLowerCase();
+
+  return {
+    provider,
+    smtpHost: cached?.smtpHost || process.env.SMTP_HOST,
+    smtpPort: cached?.smtpPort ?? (process.env.SMTP_PORT ? Number.parseInt(process.env.SMTP_PORT, 10) : 587),
+    smtpSecure:
+      typeof cached?.smtpSecure === 'boolean'
+        ? cached.smtpSecure
+        : (process.env.SMTP_SECURE || '').toLowerCase() === 'true',
+    smtpUser: cached?.smtpUser || process.env.SMTP_USER,
+    smtpPass: cached?.smtpPass || process.env.SMTP_PASS,
+    emailFrom: cached?.emailFrom || process.env.EMAIL_FROM || process.env.SMTP_FROM || process.env.SMTP_USER,
+  };
+};
+
+const isEmailConfigured = () => {
+  const settings = getEffectiveEmailSettings();
+  if (settings.provider === 'ethereal') {
+    const isProd = String(process.env.NODE_ENV || '').trim().toLowerCase() === 'production';
+    return !isProd;
+  }
+
+  return Boolean(settings.smtpHost && settings.smtpPort && settings.smtpUser && settings.smtpPass);
+};
+
+let mailTransporter;
+let etherealAccount;
+const getMailTransporter = async () => {
+  if (mailTransporter) return mailTransporter;
+
+  const settings = getEffectiveEmailSettings();
+
+  if (settings.provider === 'ethereal') {
+    etherealAccount = etherealAccount || (await nodemailer.createTestAccount());
+    mailTransporter = nodemailer.createTransport({
+      host: etherealAccount.smtp.host,
+      port: etherealAccount.smtp.port,
+      secure: etherealAccount.smtp.secure,
+      auth: {
+        user: etherealAccount.user,
+        pass: etherealAccount.pass,
+      },
+    });
+    return mailTransporter;
+  }
+
+  mailTransporter = nodemailer.createTransport({
+    host: settings.smtpHost,
+    port: Number.parseInt(String(settings.smtpPort || '587'), 10),
+    secure: Boolean(settings.smtpSecure),
+    auth: {
+      user: settings.smtpUser,
+      pass: settings.smtpPass,
+    },
+  });
+
+  return mailTransporter;
+};
+
+const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+
+const columnExists = async ({ tableName, columnName }) => {
+  const [rows] = await db.execute(
+    `SELECT 1 AS ok
+     FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?
+     LIMIT 1`,
+    [dbConfig.database, tableName, columnName]
+  );
+  return Array.isArray(rows) && rows.length > 0;
+};
+
+const ensureUserColumns = async () => {
+  try {
+    if (!(await columnExists({ tableName: 'users', columnName: 'email_verified' }))) {
+      await db.execute('ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT TRUE');
+    }
+    if (!(await columnExists({ tableName: 'users', columnName: 'email_verified_at' }))) {
+      await db.execute('ALTER TABLE users ADD COLUMN email_verified_at TIMESTAMP NULL');
+    }
+    if (!(await columnExists({ tableName: 'users', columnName: 'deactivated_at' }))) {
+      await db.execute('ALTER TABLE users ADD COLUMN deactivated_at TIMESTAMP NULL');
+    }
+
+    if (await columnExists({ tableName: 'users', columnName: 'email_verified' })) {
+      await db.execute('UPDATE users SET email_verified = TRUE WHERE email_verified IS NULL').catch(() => {});
+    }
+  } catch (e) {
+    console.warn('User column migration skipped:', e?.message || e);
+  }
+};
+
+const ensureCipherHistoryColumns = async () => {
+  try {
+    if (!(await columnExists({ tableName: 'cipher_history', columnName: 'cipher_config' }))) {
+      await db.execute('ALTER TABLE cipher_history ADD COLUMN cipher_config JSON NULL');
+    }
+    if (!(await columnExists({ tableName: 'cipher_history', columnName: 'input_text' }))) {
+      await db.execute('ALTER TABLE cipher_history ADD COLUMN input_text TEXT NULL');
+    }
+    if (!(await columnExists({ tableName: 'cipher_history', columnName: 'output_text' }))) {
+      await db.execute('ALTER TABLE cipher_history ADD COLUMN output_text TEXT NULL');
+    }
+  } catch (e) {
+    console.warn('Cipher history column migration skipped:', e?.message || e);
+  }
+};
+
+const createEmailNotConfiguredError = () => {
+  const error = new Error(
+    'Email service is not configured. Configure SMTP in backend .env or set it from the Admin Dashboard (or set EMAIL_PROVIDER=ethereal for local dev)'
+  );
+  error.statusCode = 503;
+  return error;
+};
+
+const isDevOtpFallbackEnabled = () => {
+  const enabled = String(process.env.DEV_PRINT_OTPS || '').trim().toLowerCase() === 'true';
+  const isProd = String(process.env.NODE_ENV || '').trim().toLowerCase() === 'production';
+  return enabled && !isProd;
+};
+
+const sendEmail = async ({ to, subject, text }) => {
+  const emailTo = normalizeEmail(to);
+  if (!emailTo) return { ok: false };
+
+  if (!isEmailConfigured()) {
+    console.log('[email disabled]', { to: emailTo, subject, text });
+    return { ok: false, disabled: true };
+  }
+
+  try {
+    const transporter = await getMailTransporter();
+    const settings = getEffectiveEmailSettings();
+    const from = settings.emailFrom || (settings.provider === 'ethereal' ? etherealAccount?.user : settings.smtpUser);
+
+    const info = await transporter.sendMail({
+      from,
+      to: emailTo,
+      subject,
+      text,
+    });
+
+    if (settings.provider === 'ethereal') {
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      if (previewUrl) {
+        console.log('[ethereal preview]', previewUrl);
+      }
+    }
+
+    return { ok: true };
+  } catch (e) {
+    console.warn('Email send failed:', e?.message || e);
+    return { ok: false, error: e };
+  }
+};
+
+const isEmailEventInCooldown = async ({ email, eventType, cooldownSeconds }) => {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return false;
+
+  const [rows] = await db.execute(
+    'SELECT last_sent_at FROM email_event_log WHERE email = ? AND event_type = ? LIMIT 1',
+    [normalized, eventType]
+  );
+
+  if (rows.length === 0 || !rows[0].last_sent_at) return false;
+  const lastSent = new Date(rows[0].last_sent_at).getTime();
+  if (!Number.isFinite(lastSent)) return false;
+  return (Date.now() - lastSent) / 1000 < cooldownSeconds;
+};
+
+const markEmailEventSentNow = async ({ email, eventType }) => {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return;
+  await db.execute(
+    'INSERT INTO email_event_log (email, event_type, last_sent_at) VALUES (?, ?, NOW()) ON DUPLICATE KEY UPDATE last_sent_at = NOW()',
+    [normalized, eventType]
+  );
+};
+
+const trySendEmailWithCooldown = async ({ email, eventType, cooldownSeconds, subject, text }) => {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return;
+
+  try {
+    const inCooldown = await isEmailEventInCooldown({ email: normalized, eventType, cooldownSeconds });
+    if (inCooldown) return;
+    const result = await sendEmail({ to: normalized, subject, text });
+    if (result?.ok) {
+      await markEmailEventSentNow({ email: normalized, eventType });
+    }
+  } catch (e) {
+    console.warn('Email send skipped due to error:', e?.message || e);
+  }
+};
+
+const createAndSendOtp = async ({ email, purpose, eventType }) => {
+  const normalized = normalizeEmail(email);
+  if (!normalized) throw new Error('Email is required');
+
+  if (!isEmailConfigured() && !isDevOtpFallbackEnabled()) {
+    throw createEmailNotConfiguredError();
+  }
+
+  const inCooldown = await isEmailEventInCooldown({
+    email: normalized,
+    eventType,
+    cooldownSeconds: OTP_RESEND_COOLDOWN_SECONDS,
+  });
+  if (inCooldown) {
+    const error = new Error('Please wait before requesting another OTP');
+    error.statusCode = 429;
+    throw error;
+  }
+
+  const otp = crypto.randomInt(0, 1_000_000).toString().padStart(6, '0');
+  const otpHash = await bcrypt.hash(otp, 10);
+  const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+  await db.execute(
+    'INSERT INTO email_otps (email, purpose, otp_hash, expires_at) VALUES (?, ?, ?, ?)',
+    [normalized, purpose, otpHash, expiresAt]
+  );
+
+  if (!isEmailConfigured() && isDevOtpFallbackEnabled()) {
+    console.warn('[dev otp]', { email: normalized, purpose, otp });
+  } else {
+    const emailResult = await sendEmail({
+      to: normalized,
+      subject: `${APP_NAME} verification code`,
+      text: `Your one-time verification code is: ${otp}\n\nThis code expires in ${OTP_EXPIRY_MINUTES} minutes. If you did not request this, you can ignore this email.`,
+    });
+
+    if (!emailResult?.ok) {
+      const smtpErr = emailResult?.error;
+      let message =
+        'Failed to send OTP email. Check Email Settings (SMTP credentials / provider) in the Admin Dashboard.';
+
+      // Common Gmail failure: wrong password / not an App Password
+      if (smtpErr?.code === 'EAUTH' || smtpErr?.responseCode === 535) {
+        message =
+          'Failed to send OTP email: SMTP authentication failed (Gmail 535). If you are using Gmail, you must use a Google App Password (requires 2-Step Verification), not your normal Gmail password.';
+      }
+
+      const error = new Error(message);
+      error.statusCode = emailResult?.disabled ? 503 : 502;
+      throw error;
+    }
+  }
+
+  await markEmailEventSentNow({ email: normalized, eventType });
+};
+
+const verifyOtp = async ({ email, purpose, otp }) => {
+  const normalized = normalizeEmail(email);
+  const provided = String(otp || '').trim();
+  if (!normalized || !provided) return { ok: false };
+
+  const [rows] = await db.execute(
+    'SELECT id, otp_hash, expires_at, consumed_at, attempts FROM email_otps WHERE email = ? AND purpose = ? AND consumed_at IS NULL AND expires_at > NOW() ORDER BY id DESC LIMIT 1',
+    [normalized, purpose]
+  );
+  if (rows.length === 0) return { ok: false };
+
+  const record = rows[0];
+  if ((record.attempts || 0) >= 5) return { ok: false };
+
+  const matches = await bcrypt.compare(provided, record.otp_hash);
+  if (!matches) {
+    await db.execute('UPDATE email_otps SET attempts = attempts + 1 WHERE id = ?', [record.id]);
+    return { ok: false };
+  }
+
+  await db.execute('UPDATE email_otps SET consumed_at = NOW() WHERE id = ?', [record.id]);
+  return { ok: true };
+};
 
 // Initialize database
 async function initDatabase() {
@@ -50,6 +376,8 @@ async function initDatabase() {
         email VARCHAR(100) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         role ENUM('user', 'admin') DEFAULT 'user',
+        email_verified BOOLEAN DEFAULT TRUE,
+        email_verified_at TIMESTAMP NULL,
         is_active BOOLEAN DEFAULT TRUE,
         deactivated_at TIMESTAMP NULL,
         last_login TIMESTAMP NULL,
@@ -57,11 +385,62 @@ async function initDatabase() {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
-    
-    // Add deactivated_at column if it doesn't exist
+
+    // Ensure required columns exist even on MySQL versions that don't support ADD COLUMN IF NOT EXISTS.
+    await ensureUserColumns();
+
     await db.execute(`
-      ALTER TABLE users ADD COLUMN IF NOT EXISTS deactivated_at TIMESTAMP NULL
-    `).catch(() => {});
+      CREATE TABLE IF NOT EXISTS email_otps (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(100) NOT NULL,
+        purpose ENUM('register', 'deactivate', 'delete') NOT NULL,
+        otp_hash VARCHAR(255) NOT NULL,
+        expires_at TIMESTAMP NOT NULL,
+        consumed_at TIMESTAMP NULL,
+        attempts INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_email_purpose (email, purpose),
+        INDEX idx_expires (expires_at)
+      )
+    `);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS email_event_log (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(100) NOT NULL,
+        event_type VARCHAR(50) NOT NULL,
+        last_sent_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_email_event (email, event_type),
+        INDEX idx_event_last_sent (event_type, last_sent_at)
+      )
+    `);
+
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS system_email_settings (
+        id INT PRIMARY KEY,
+        enabled BOOLEAN DEFAULT TRUE,
+        provider ENUM('smtp', 'ethereal') DEFAULT 'smtp',
+        smtp_host VARCHAR(255) NULL,
+        smtp_port INT NULL,
+        smtp_secure BOOLEAN DEFAULT FALSE,
+        smtp_user VARCHAR(255) NULL,
+        smtp_pass_enc TEXT NULL,
+        email_from VARCHAR(255) NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    await db.execute(
+      'INSERT IGNORE INTO system_email_settings (id, enabled, provider, smtp_host, smtp_port, smtp_secure) VALUES (1, TRUE, ?, ?, ?, ?) ',
+      [
+        EMAIL_PROVIDER === 'ethereal' ? 'ethereal' : 'smtp',
+        process.env.SMTP_HOST || 'smtp.gmail.com',
+        Number.parseInt(process.env.SMTP_PORT || '587', 10),
+        (process.env.SMTP_SECURE || '').toLowerCase() === 'true',
+      ]
+    );
     
     // Create custom_ciphers table
     await db.execute(`
@@ -99,18 +478,8 @@ async function initDatabase() {
       )
     `);
 
-    // Optional richer history fields (added for viewing full encryption/decryption records)
-    await db.execute(`
-      ALTER TABLE cipher_history ADD COLUMN IF NOT EXISTS cipher_config JSON NULL
-    `).catch(() => {});
-
-    await db.execute(`
-      ALTER TABLE cipher_history ADD COLUMN IF NOT EXISTS input_text TEXT NULL
-    `).catch(() => {});
-
-    await db.execute(`
-      ALTER TABLE cipher_history ADD COLUMN IF NOT EXISTS output_text TEXT NULL
-    `).catch(() => {});
+    // Ensure columns exist even on MySQL versions that don't support ADD COLUMN IF NOT EXISTS.
+    await ensureCipherHistoryColumns();
     
     // Create saved_messages table
     await db.execute(`
@@ -339,6 +708,25 @@ async function initDatabase() {
     console.log('✅ Database and all tables initialized successfully');
     console.log('📊 Created tables: users, custom_ciphers, cipher_history, saved_messages, cipher_challenges, user_challenge_attempts, user_stats, user_badges, shared_ciphers');
     console.log('🧩 Sample challenges added to database');
+
+    try {
+      const [rows] = await db.execute('SELECT * FROM system_email_settings WHERE id = 1 LIMIT 1');
+      if (rows && rows.length > 0) {
+        const row = rows[0];
+        emailSettingsCache = {
+          enabled: Boolean(row.enabled),
+          provider: String(row.provider || '').trim().toLowerCase() || 'smtp',
+          smtpHost: row.smtp_host || null,
+          smtpPort: row.smtp_port ?? null,
+          smtpSecure: row.smtp_secure === 1 || row.smtp_secure === true,
+          smtpUser: row.smtp_user || null,
+          smtpPass: row.smtp_pass_enc ? decryptSecret(row.smtp_pass_enc) : null,
+          emailFrom: row.email_from || null,
+        };
+      }
+    } catch (e) {
+      console.warn('Email settings cache load skipped:', e?.message || e);
+    }
   } catch (error) {
     console.error('❌ Database initialization error:', error);
   }
@@ -381,18 +769,60 @@ const requireAdmin = async (req, res, next) => {
 };
 
 // Auth routes
+app.post('/api/auth/register/request-otp', async (req, res) => {
+  try {
+    const { username, email } = req.body;
+    const trimmedUsername = String(username || '').trim();
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!trimmedUsername || !normalizedEmail) {
+      return res.status(400).json({ message: 'Username and email are required' });
+    }
+
+    const [existingUsers] = await db.execute(
+      'SELECT id FROM users WHERE email = ? OR username = ? LIMIT 1',
+      [normalizedEmail, trimmedUsername]
+    );
+
+    if (existingUsers.length > 0) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    try {
+      await createAndSendOtp({ email: normalizedEmail, purpose: 'register', eventType: 'otp_register' });
+    } catch (e) {
+      if (e?.statusCode) return res.status(e.statusCode).json({ message: e.message });
+      throw e;
+    }
+
+    res.json({ message: 'OTP sent to email' });
+  } catch (error) {
+    console.error('Register OTP error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, otp } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+    const trimmedUsername = String(username || '').trim();
+    const normalizedEmail = normalizeEmail(email);
+    const otpValue = String(otp || '').trim();
+
+    if (!trimmedUsername || !normalizedEmail || !password || !otpValue) {
+      return res.status(400).json({ message: 'Username, email, password and OTP are required' });
+    }
+
+    const otpResult = await verifyOtp({ email: normalizedEmail, purpose: 'register', otp: otpValue });
+    if (!otpResult.ok) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
     // Check if user exists
     const [existingUsers] = await db.execute(
       'SELECT id FROM users WHERE email = ? OR username = ?',
-      [email, username]
+      [normalizedEmail, trimmedUsername]
     );
 
     if (existingUsers.length > 0) {
@@ -405,12 +835,12 @@ app.post('/api/auth/register', async (req, res) => {
     // Create user
     const [result] = await db.execute(
       'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
-      [username, email, hashedPassword]
+      [trimmedUsername, normalizedEmail, hashedPassword]
     );
 
     // Generate token
     const token = jwt.sign(
-      { id: result.insertId, email },
+      { id: result.insertId, email: normalizedEmail },
       process.env.JWT_SECRET || 'cipher_secret_key',
       { expiresIn: '1h' }
     );
@@ -418,7 +848,7 @@ app.post('/api/auth/register', async (req, res) => {
     res.status(201).json({
       message: 'User created successfully',
       token,
-      user: { id: result.insertId, username, email }
+      user: { id: result.insertId, username: trimmedUsername, email: normalizedEmail }
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -430,14 +860,16 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail || !password) {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
     // Find user
     const [users] = await db.execute(
       'SELECT * FROM users WHERE email = ?',
-      [email]
+      [normalizedEmail]
     );
 
     if (users.length === 0) {
@@ -468,6 +900,13 @@ app.post('/api/auth/login', async (req, res) => {
     // Check password
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
+      await trySendEmailWithCooldown({
+        email: user.email,
+        eventType: 'login_failed',
+        cooldownSeconds: FAILED_LOGIN_EMAIL_COOLDOWN_SECONDS,
+        subject: `${APP_NAME} - failed login attempt`,
+        text: `A failed login attempt was made for your account at ${new Date().toISOString()} from IP: ${req.ip}. If this wasn't you, consider changing your password.`,
+      });
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
@@ -489,6 +928,12 @@ app.post('/api/auth/login', async (req, res) => {
       token,
       user: { id: user.id, username: user.username, email: user.email, role: user.role }
     });
+
+    sendEmail({
+      to: user.email,
+      subject: `${APP_NAME} - login successful`,
+      text: `A login to your account occurred at ${new Date().toISOString()} from IP: ${req.ip}. If this wasn't you, please reset your password.`,
+    }).catch(() => {});
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -647,11 +1092,14 @@ app.post('/api/history', authenticateToken, async (req, res) => {
 app.get('/api/history', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const limit = req.query.limit || 50;
-    
+
+    const requestedLimit = Number.parseInt(String(req.query.limit || '50'), 10);
+    const safeLimit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 200) : 50;
+
+    // Some MySQL / driver setups don't allow binding LIMIT as a parameter.
     const [history] = await db.execute(
-      'SELECT * FROM cipher_history WHERE user_id = ? ORDER BY created_at DESC LIMIT ?',
-      [userId, parseInt(limit)]
+      `SELECT * FROM cipher_history WHERE user_id = ? ORDER BY created_at DESC LIMIT ${safeLimit}`,
+      [userId]
     );
     
     res.json(
@@ -672,6 +1120,7 @@ app.get('/api/history', authenticateToken, async (req, res) => {
       })
     );
   } catch (error) {
+    console.error('Get history error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -720,6 +1169,132 @@ app.get('/api/public-ciphers', async (req, res) => {
 });
 
 // Admin routes
+app.post('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { username, email, password, role } = req.body;
+    const trimmedUsername = String(username || '').trim();
+    const normalizedEmail = normalizeEmail(email);
+    const rawPassword = String(password || '').trim();
+    const requestedRole = String(role || 'user').trim().toLowerCase() === 'admin' ? 'admin' : 'user';
+
+    if (!trimmedUsername || !normalizedEmail || !rawPassword) {
+      return res.status(400).json({ message: 'Username, email and password are required' });
+    }
+
+    const [existingUsers] = await db.execute(
+      'SELECT id FROM users WHERE email = ? OR username = ? LIMIT 1',
+      [normalizedEmail, trimmedUsername]
+    );
+    if (existingUsers.length > 0) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
+    await db.execute(
+      'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
+      [trimmedUsername, normalizedEmail, hashedPassword, requestedRole]
+    );
+
+    res.json({ message: 'User created successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.get('/api/admin/email-settings', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const [rows] = await db.execute('SELECT * FROM system_email_settings WHERE id = 1 LIMIT 1');
+    const row = rows && rows.length > 0 ? rows[0] : null;
+
+    res.json({
+      enabled: row ? Boolean(row.enabled) : true,
+      provider: row?.provider || 'smtp',
+      smtpHost: row?.smtp_host || 'smtp.gmail.com',
+      smtpPort: row?.smtp_port ?? 587,
+      smtpSecure: row ? (row.smtp_secure === 1 || row.smtp_secure === true) : false,
+      smtpUser: row?.smtp_user || '',
+      emailFrom: row?.email_from || row?.smtp_user || '',
+      hasSmtpPass: Boolean(row?.smtp_pass_enc),
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.put('/api/admin/email-settings', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const enabled = req.body?.enabled;
+    const provider = String(req.body?.provider || 'smtp').trim().toLowerCase();
+    const smtpHost = String(req.body?.smtpHost || '').trim();
+    const smtpPort = Number.parseInt(String(req.body?.smtpPort || '587'), 10);
+    const smtpSecure = Boolean(req.body?.smtpSecure);
+    const smtpUser = String(req.body?.smtpUser || '').trim();
+    const smtpPass = String(req.body?.smtpPass || '').trim();
+    const emailFrom = String(req.body?.emailFrom || '').trim();
+
+    if (provider !== 'smtp' && provider !== 'ethereal') {
+      return res.status(400).json({ message: 'Invalid email provider' });
+    }
+
+    if (provider === 'smtp') {
+      if (!smtpHost || !Number.isFinite(smtpPort) || smtpPort <= 0 || smtpPort > 65535 || !smtpUser) {
+        return res.status(400).json({ message: 'SMTP host, port and user are required' });
+      }
+    }
+
+    const [rows] = await db.execute('SELECT smtp_pass_enc FROM system_email_settings WHERE id = 1 LIMIT 1');
+    const existingEnc = rows && rows.length > 0 ? rows[0].smtp_pass_enc : null;
+    const nextEnc = smtpPass ? encryptSecret(smtpPass) : existingEnc;
+
+    await db.execute(
+      `INSERT INTO system_email_settings
+        (id, enabled, provider, smtp_host, smtp_port, smtp_secure, smtp_user, smtp_pass_enc, email_from)
+       VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+        enabled = VALUES(enabled),
+        provider = VALUES(provider),
+        smtp_host = VALUES(smtp_host),
+        smtp_port = VALUES(smtp_port),
+        smtp_secure = VALUES(smtp_secure),
+        smtp_user = VALUES(smtp_user),
+        smtp_pass_enc = VALUES(smtp_pass_enc),
+        email_from = VALUES(email_from)
+      `,
+      [
+        typeof enabled === 'boolean' ? enabled : true,
+        provider,
+        smtpHost || null,
+        Number.isFinite(smtpPort) ? smtpPort : 587,
+        smtpSecure,
+        smtpUser || null,
+        nextEnc || null,
+        emailFrom || null,
+      ]
+    );
+
+    const [freshRows] = await db.execute('SELECT * FROM system_email_settings WHERE id = 1 LIMIT 1');
+    if (freshRows && freshRows.length > 0) {
+      const row = freshRows[0];
+      emailSettingsCache = {
+        enabled: Boolean(row.enabled),
+        provider: String(row.provider || '').trim().toLowerCase() || 'smtp',
+        smtpHost: row.smtp_host || null,
+        smtpPort: row.smtp_port ?? null,
+        smtpSecure: row.smtp_secure === 1 || row.smtp_secure === true,
+        smtpUser: row.smtp_user || null,
+        smtpPass: row.smtp_pass_enc ? decryptSecret(row.smtp_pass_enc) : null,
+        emailFrom: row.email_from || null,
+      };
+    }
+    mailTransporter = null;
+    etherealAccount = null;
+
+    res.json({ message: 'Email settings saved' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const [users] = await db.execute(
@@ -1065,9 +1640,43 @@ app.get('/api/shared/:token', async (req, res) => {
 });
 
 // User account management
+app.post('/api/user/deactivate/request-otp', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [users] = await db.execute('SELECT email FROM users WHERE id = ? LIMIT 1', [userId]);
+    if (users.length === 0) return res.status(404).json({ message: 'User not found' });
+
+    try {
+      await createAndSendOtp({ email: users[0].email, purpose: 'deactivate', eventType: 'otp_deactivate' });
+    } catch (e) {
+      if (e?.statusCode) return res.status(e.statusCode).json({ message: e.message });
+      throw e;
+    }
+
+    res.json({ message: 'OTP sent to email' });
+  } catch (error) {
+    console.error('Deactivate OTP error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 app.put('/api/user/deactivate', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
+
+    const otpValue = String(req.body?.otp || '').trim();
+    if (!otpValue) {
+      return res.status(400).json({ message: 'OTP is required to deactivate your account' });
+    }
+
+    const [users] = await db.execute('SELECT email FROM users WHERE id = ? LIMIT 1', [userId]);
+    if (users.length === 0) return res.status(404).json({ message: 'User not found' });
+
+    const otpResult = await verifyOtp({ email: users[0].email, purpose: 'deactivate', otp: otpValue });
+    if (!otpResult.ok) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
     
     await db.execute(
       'UPDATE users SET is_active = FALSE, deactivated_at = NOW() WHERE id = ?',
@@ -1121,11 +1730,45 @@ app.put('/api/user/reactivate', async (req, res) => {
 app.delete('/api/user/delete', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
+
+    const otpValue = String(req.body?.otp || '').trim();
+    if (!otpValue) {
+      return res.status(400).json({ message: 'OTP is required to delete your account' });
+    }
+
+    const [users] = await db.execute('SELECT email FROM users WHERE id = ? LIMIT 1', [userId]);
+    if (users.length === 0) return res.status(404).json({ message: 'User not found' });
+
+    const otpResult = await verifyOtp({ email: users[0].email, purpose: 'delete', otp: otpValue });
+    if (!otpResult.ok) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
     
     await db.execute('DELETE FROM users WHERE id = ?', [userId]);
     
     res.json({ message: 'Account deleted successfully' });
   } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/api/user/delete/request-otp', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [users] = await db.execute('SELECT email FROM users WHERE id = ? LIMIT 1', [userId]);
+    if (users.length === 0) return res.status(404).json({ message: 'User not found' });
+
+    try {
+      await createAndSendOtp({ email: users[0].email, purpose: 'delete', eventType: 'otp_delete' });
+    } catch (e) {
+      if (e?.statusCode) return res.status(e.statusCode).json({ message: e.message });
+      throw e;
+    }
+
+    res.json({ message: 'OTP sent to email' });
+  } catch (error) {
+    console.error('Delete OTP error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -8,10 +8,23 @@ const AdminDashboard = ({ user, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [showAddUser, setShowAddUser] = useState(false);
   const [newUser, setNewUser] = useState({ username: '', email: '', password: '', role: 'user' });
+  const [emailSettings, setEmailSettings] = useState({
+    enabled: true,
+    provider: 'smtp',
+    smtpHost: 'smtp.gmail.com',
+    smtpPort: 587,
+    smtpSecure: false,
+    smtpUser: '',
+    smtpPass: '',
+    emailFrom: '',
+    hasSmtpPass: false,
+  });
+  const [savingEmailSettings, setSavingEmailSettings] = useState(false);
 
   useEffect(() => {
     fetchUsers();
     fetchStats();
+    fetchEmailSettings();
   }, []);
 
   const fetchUsers = async () => {
@@ -55,7 +68,7 @@ const AdminDashboard = ({ user, onClose }) => {
   const addUser = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/auth/register', {
+      const response = await fetch('http://localhost:3001/api/admin/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -76,6 +89,67 @@ const AdminDashboard = ({ user, onClose }) => {
     } catch (error) {
       console.error('Error adding user:', error);
       showToast('Error adding user', 'error');
+    }
+  };
+
+  const fetchEmailSettings = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:3001/api/admin/email-settings', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setEmailSettings((prev) => ({
+          ...prev,
+          ...data,
+          smtpPass: '',
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching email settings:', error);
+    }
+  };
+
+  const saveEmailSettings = async () => {
+    try {
+      setSavingEmailSettings(true);
+      const token = localStorage.getItem('token');
+      const payload = {
+        enabled: emailSettings.enabled,
+        provider: emailSettings.provider,
+        smtpHost: emailSettings.smtpHost,
+        smtpPort: emailSettings.smtpPort,
+        smtpSecure: emailSettings.smtpSecure,
+        smtpUser: emailSettings.smtpUser,
+        smtpPass: emailSettings.smtpPass,
+        emailFrom: emailSettings.emailFrom,
+      };
+
+      const response = await fetch('http://localhost:3001/api/admin/email-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        showToast('Email settings saved!', 'success');
+        await fetchEmailSettings();
+      } else {
+        const body = await response.json().catch(() => ({}));
+        showToast(body.message || 'Failed to save email settings', 'error');
+      }
+    } catch (error) {
+      console.error('Error saving email settings:', error);
+      showToast('Error saving email settings', 'error');
+    } finally {
+      setSavingEmailSettings(false);
     }
   };
 
@@ -169,6 +243,85 @@ const AdminDashboard = ({ user, onClose }) => {
           <div className="stat-card">
             <h3>📈 Active Users (7d)</h3>
             <div className="stat-number">{stats.activeUsers || 0}</div>
+          </div>
+        </div>
+
+        <div className="users-section">
+          <div className="section-header">
+            <h3>Email Settings</h3>
+          </div>
+          <div style={{ padding: '10px 0' }}>
+            <label style={{ display: 'block', marginBottom: 6 }}>
+              <input
+                type="checkbox"
+                checked={!!emailSettings.enabled}
+                onChange={(e) => setEmailSettings({ ...emailSettings, enabled: e.target.checked })}
+              />{' '}
+              Enable emails (OTPs + login/security notifications)
+            </label>
+
+            <div style={{ display: 'grid', gap: 8 }}>
+              <select
+                value={emailSettings.provider}
+                onChange={(e) => setEmailSettings({ ...emailSettings, provider: e.target.value })}
+              >
+                <option value="smtp">SMTP (Gmail recommended)</option>
+                <option value="ethereal">Ethereal (safe dev inbox)</option>
+              </select>
+
+              <input
+                type="text"
+                placeholder="SMTP Host (e.g. smtp.gmail.com)"
+                value={emailSettings.smtpHost || ''}
+                onChange={(e) => setEmailSettings({ ...emailSettings, smtpHost: e.target.value })}
+                disabled={emailSettings.provider !== 'smtp'}
+              />
+              <input
+                type="number"
+                placeholder="SMTP Port (e.g. 587)"
+                value={emailSettings.smtpPort}
+                onChange={(e) => setEmailSettings({ ...emailSettings, smtpPort: Number(e.target.value) })}
+                disabled={emailSettings.provider !== 'smtp'}
+              />
+              <label style={{ display: 'block' }}>
+                <input
+                  type="checkbox"
+                  checked={!!emailSettings.smtpSecure}
+                  onChange={(e) => setEmailSettings({ ...emailSettings, smtpSecure: e.target.checked })}
+                  disabled={emailSettings.provider !== 'smtp'}
+                />{' '}
+                SMTP Secure (usually false for port 587)
+              </label>
+              <input
+                type="email"
+                placeholder="SMTP User (sender email)"
+                value={emailSettings.smtpUser || ''}
+                onChange={(e) => setEmailSettings({ ...emailSettings, smtpUser: e.target.value })}
+                disabled={emailSettings.provider !== 'smtp'}
+              />
+              <input
+                type="password"
+                placeholder={emailSettings.hasSmtpPass ? 'SMTP Password (leave blank to keep current)' : 'SMTP Password (Gmail App Password)'}
+                value={emailSettings.smtpPass}
+                onChange={(e) => setEmailSettings({ ...emailSettings, smtpPass: e.target.value })}
+                disabled={emailSettings.provider !== 'smtp'}
+              />
+              <input
+                type="text"
+                placeholder="From Address (optional)"
+                value={emailSettings.emailFrom || ''}
+                onChange={(e) => setEmailSettings({ ...emailSettings, emailFrom: e.target.value })}
+                disabled={emailSettings.provider !== 'smtp'}
+              />
+
+              <button
+                className="add-user-btn"
+                onClick={saveEmailSettings}
+                disabled={savingEmailSettings}
+              >
+                {savingEmailSettings ? 'Saving…' : 'Save Email Settings'}
+              </button>
+            </div>
           </div>
         </div>
 

@@ -82,7 +82,14 @@ describe('UserMenu', () => {
       }),
     });
 
-    // deactivate
+    // request OTP
+    fetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ message: 'OTP sent' }),
+    });
+
+    // deactivate confirm
     fetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -105,12 +112,20 @@ describe('UserMenu', () => {
     );
 
     await userEvent.click(screen.getByRole('button', { name: /deactivate account/i }));
+    await userEvent.click(screen.getByRole('button', { name: /send otp/i }));
+
+    await waitFor(() => expect(screen.getByPlaceholderText(/enter otp/i)).toBeInTheDocument());
+    await userEvent.type(screen.getByPlaceholderText(/enter otp/i), '123456');
     await userEvent.click(screen.getByRole('button', { name: /yes, deactivate/i }));
 
     await waitFor(() => expect(onLogout).toHaveBeenCalled());
     expect(fetch).toHaveBeenCalledWith(
       'http://localhost:3001/api/me/profile',
       expect.objectContaining({ headers: expect.any(Object) })
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:3001/api/user/deactivate/request-otp',
+      expect.objectContaining({ method: 'POST' })
     );
     expect(fetch).toHaveBeenCalledWith(
       'http://localhost:3001/api/user/deactivate',
