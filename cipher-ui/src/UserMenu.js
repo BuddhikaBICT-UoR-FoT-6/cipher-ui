@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { showToast } from './Toast';
 import './UserMenu.css';
 
-const UserMenu = ({ user, onLogout, onClose }) => {
+const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
   const [showConfirm, setShowConfirm] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileStats, setProfileStats] = useState(null);
@@ -183,6 +183,15 @@ const UserMenu = ({ user, onLogout, onClose }) => {
         </div>
         
         <div className="menu-actions">
+          <button
+            className="menu-btn history-btn"
+            onClick={() => {
+              if (onShowHistory) onShowHistory();
+            }}
+          >
+            📜 Cipher History
+          </button>
+
           <button 
             className="menu-btn deactivate-btn"
             onClick={() => setShowConfirm('deactivate')}

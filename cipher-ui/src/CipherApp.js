@@ -14,6 +14,41 @@ import CryptanalysisChallenge from './CryptanalysisChallenge';
 import { showToast } from './Toast';
 import './CipherApp.css';
 
+const recordCipherHistory = async ({
+  cipherType,
+  cipherId,
+  operation,
+  inputText,
+  outputText,
+  cipherConfig,
+  executionTimeMs,
+}) => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  try {
+    await fetch('http://localhost:3001/api/history', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        cipherType,
+        cipherId: cipherId || null,
+        operation,
+        inputLength: typeof inputText === 'string' ? inputText.length : null,
+        executionTime: executionTimeMs,
+        inputText,
+        outputText,
+        cipherConfig,
+      }),
+    });
+  } catch {
+    // non-blocking
+  }
+};
+
 /**
  * Main cipher application component
  * @component
@@ -281,6 +316,8 @@ const CipherApp = ({ user, onShowLogin }) => {
       
       const cipher = cipherAlgorithms[selectedCipher];
       let result = '';
+
+      const startedAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
       
       switch (selectedCipher) {
         case 'caesar':
@@ -312,11 +349,40 @@ const CipherApp = ({ user, onShowLogin }) => {
         default:
           result = inputText;
       }
+
+      const finishedAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      const executionTimeMs = Math.max(0, Math.round(finishedAt - startedAt));
       
       setOutputText(result);
       setIsProcessing(false);
       setAnimateResult(true);
       showToast(`Text encrypted using ${cipher.name}`, 'success');
+
+      if (user) {
+        const cipherConfig = (() => {
+          switch (selectedCipher) {
+            case 'caesar':
+              return { shift: parseInt(shift, 10) };
+            case 'vigenere':
+              return { key };
+            case 'railfence':
+              return { rails: parseInt(rails, 10) };
+            case 'chain':
+              return { steps: chainSteps };
+            default:
+              return null;
+          }
+        })();
+
+        recordCipherHistory({
+          cipherType: selectedCipher,
+          operation: 'encrypt',
+          inputText,
+          outputText: result,
+          cipherConfig,
+          executionTimeMs,
+        });
+      }
     } catch (error) {
       setIsProcessing(false);
       showToast('Encryption failed. Please try again.', 'error');
@@ -350,6 +416,8 @@ const CipherApp = ({ user, onShowLogin }) => {
       
       const cipher = cipherAlgorithms[selectedCipher];
       let result = '';
+
+      const startedAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
       
       switch (selectedCipher) {
         case 'caesar':
@@ -381,11 +449,40 @@ const CipherApp = ({ user, onShowLogin }) => {
         default:
           result = inputText;
       }
+
+      const finishedAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      const executionTimeMs = Math.max(0, Math.round(finishedAt - startedAt));
       
       setOutputText(result);
       setIsProcessing(false);
       setAnimateResult(true);
       showToast(`Text decrypted using ${cipher.name}`, 'success');
+
+      if (user) {
+        const cipherConfig = (() => {
+          switch (selectedCipher) {
+            case 'caesar':
+              return { shift: parseInt(shift, 10) };
+            case 'vigenere':
+              return { key };
+            case 'railfence':
+              return { rails: parseInt(rails, 10) };
+            case 'chain':
+              return { steps: chainSteps };
+            default:
+              return null;
+          }
+        })();
+
+        recordCipherHistory({
+          cipherType: selectedCipher,
+          operation: 'decrypt',
+          inputText,
+          outputText: result,
+          cipherConfig,
+          executionTimeMs,
+        });
+      }
     } catch (error) {
       setIsProcessing(false);
       showToast('Decryption failed. Please try again.', 'error');
@@ -480,6 +577,7 @@ const CipherApp = ({ user, onShowLogin }) => {
       {selectedCipher === 'custom' ? (
         user ? (
           <CustomCipherBuilder 
+            user={user}
             onMappingChange={setCustomCipherMapping}
             onNameChange={setCustomCipherName}
           />

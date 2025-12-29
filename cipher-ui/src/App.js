@@ -5,6 +5,7 @@ import ThemeToggle from './ThemeToggle';
 import Login from './Login';
 import AdminDashboard from './AdminDashboard';
 import UserMenu from './UserMenu';
+import CipherHistory from './CipherHistory';
 import Toast, { showToast } from './Toast';
 
 const decodeJwtPayload = (token) => {
@@ -33,6 +34,7 @@ function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const forceLogout = (message) => {
     localStorage.removeItem('token');
@@ -41,6 +43,7 @@ function App() {
     setUser(null);
     setShowAdmin(false);
     setShowUserMenu(false);
+    setShowHistory(false);
     setShowLogin(true);
     if (message) showToast(message, 'warning');
   };
@@ -119,7 +122,13 @@ function App() {
     localStorage.removeItem('user');
     setToken(null);
     setUser(null);
+    setShowHistory(false);
     showToast('Logged out successfully', 'info');
+  };
+
+  const handleShowHistory = () => {
+    setShowUserMenu(false);
+    setShowHistory(true);
   };
 
   return (
@@ -149,7 +158,14 @@ function App() {
           <UserMenu 
             user={user}
             onLogout={handleLogout}
+            onShowHistory={handleShowHistory}
             onClose={() => setShowUserMenu(false)}
+          />
+        )}
+        {showHistory && user && (
+          <CipherHistory
+            user={user}
+            onClose={() => setShowHistory(false)}
           />
         )}
         <Toast />

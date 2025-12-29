@@ -65,6 +65,35 @@
   margin-bottom: 30px;
 }
 
+.previous-ciphers-section {
+  margin-bottom: 14px;
+}
+
+.previous-ciphers-select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e1e8ed;
+  border-radius: 10px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.dark-theme .previous-ciphers-select {
+  background: rgba(52, 73, 94, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.previous-ciphers-select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.dark-theme .previous-ciphers-select:focus {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+
 .cipher-name-section label {
   display: block;
   margin-bottom: 8px;

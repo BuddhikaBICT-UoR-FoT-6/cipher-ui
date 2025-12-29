@@ -36,7 +36,7 @@ CipherProject is a full‑stack learning and demo application for classic crypto
 
 ## 🧱 Tech Stack
 
-**Frontend** ([cipher-ui/](cipher-ui/))
+**Frontend** ([cipher-ui/cipher-ui/](cipher-ui/cipher-ui/))
 - React (Create React App)
 - Testing Library + Jest
 - Fetch API
@@ -56,7 +56,7 @@ CipherProject is a full‑stack learning and demo application for classic crypto
 ```
 CipherProject/
 	backend/                 # Express API + DB init
-	cipher-ui/               # React UI
+	cipher-ui/cipher-ui/     # React UI (Create React App)
 	src/main/java/           # Java reference implementations
 	Database.sql             # Optional/manual DB setup script
 	README.md
@@ -114,7 +114,7 @@ The API runs at `http://localhost:3001`.
 In another terminal:
 
 ```bash
-cd cipher-ui
+cd cipher-ui/cipher-ui
 npm install
 npm start
 ```
@@ -131,18 +131,18 @@ Open `http://localhost:3000`.
 Frontend tests:
 
 ```bash
-cd cipher-ui
+cd cipher-ui/cipher-ui
 npm test -- --watchAll=false
 ```
 
 ## 📚 Documentation
 
-The UI contains generated docs under [cipher-ui/docs/](cipher-ui/docs/).
+The UI contains generated docs under [cipher-ui/cipher-ui/docs/](cipher-ui/cipher-ui/docs/).
 
 Generate docs (optional):
 
 ```bash
-cd cipher-ui
+cd cipher-ui/cipher-ui
 npm run docs:all
 ```
 

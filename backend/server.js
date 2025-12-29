@@ -98,6 +98,19 @@ async function initDatabase() {
         INDEX idx_created_at (created_at)
       )
     `);
+
+    // Optional richer history fields (added for viewing full encryption/decryption records)
+    await db.execute(`
+      ALTER TABLE cipher_history ADD COLUMN IF NOT EXISTS cipher_config JSON NULL
+    `).catch(() => {});
+
+    await db.execute(`
+      ALTER TABLE cipher_history ADD COLUMN IF NOT EXISTS input_text TEXT NULL
+    `).catch(() => {});
+
+    await db.execute(`
+      ALTER TABLE cipher_history ADD COLUMN IF NOT EXISTS output_text TEXT NULL
+    `).catch(() => {});
     
     // Create saved_messages table
     await db.execute(`
@@ -488,9 +501,17 @@ app.post('/api/ciphers', authenticateToken, async (req, res) => {
     const { name, description, mapping, isPublic } = req.body;
     const userId = req.user.id;
 
+    const trimmedName = typeof name === 'string' ? name.trim() : '';
+    if (!trimmedName) {
+      return res.status(400).json({ message: 'Cipher name is required' });
+    }
+    if (!mapping || typeof mapping !== 'object') {
+      return res.status(400).json({ message: 'Cipher mapping is required' });
+    }
+
     const [result] = await db.execute(
       'INSERT INTO custom_ciphers (user_id, name, description, mapping, is_public) VALUES (?, ?, ?, ?, ?)',
-      [userId, name, description || null, JSON.stringify(mapping), isPublic || false]
+      [userId, trimmedName, description || null, JSON.stringify(mapping), isPublic || false]
     );
 
     res.status(201).json({
@@ -512,10 +533,23 @@ app.get('/api/ciphers', authenticateToken, async (req, res) => {
       [userId]
     );
 
-    res.json(ciphers.map(cipher => ({
-      ...cipher,
-      mapping: JSON.parse(cipher.mapping)
-    })));
+    const safeParseMapping = (value) => {
+      if (value == null) return null;
+      if (typeof value === 'object') return value;
+      if (typeof value !== 'string') return null;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return null;
+      }
+    };
+
+    res.json(
+      ciphers.map((cipher) => ({
+        ...cipher,
+        mapping: safeParseMapping(cipher.mapping),
+      }))
+    );
   } catch (error) {
     console.error('Get ciphers error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -561,12 +595,38 @@ app.get('/api/messages', authenticateToken, async (req, res) => {
 // Cipher history tracking
 app.post('/api/history', authenticateToken, async (req, res) => {
   try {
-    const { cipherType, cipherId, operation, inputLength, executionTime } = req.body;
+    const {
+      cipherType,
+      cipherId,
+      operation,
+      inputLength,
+      executionTime,
+      inputText,
+      outputText,
+      cipherConfig,
+    } = req.body;
     const userId = req.user.id;
 
+    const executionTimeMs = Number.isFinite(Number(executionTime)) ? Number(executionTime) : null;
+    const safeInputLength = Number.isFinite(Number(inputLength)) ? Number(inputLength) : null;
+
+    const cipherConfigJson = cipherConfig === undefined ? null : JSON.stringify(cipherConfig);
+    const safeInputText = typeof inputText === 'string' ? inputText : null;
+    const safeOutputText = typeof outputText === 'string' ? outputText : null;
+
     await db.execute(
-      'INSERT INTO cipher_history (user_id, cipher_type, cipher_id, operation, input_length, execution_time_ms) VALUES (?, ?, ?, ?, ?, ?)',
-      [userId, cipherType, cipherId || null, operation, inputLength, executionTime]
+      'INSERT INTO cipher_history (user_id, cipher_type, cipher_id, operation, input_length, execution_time_ms, cipher_config, input_text, output_text) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        userId,
+        cipherType,
+        cipherId || null,
+        operation,
+        safeInputLength,
+        executionTimeMs,
+        cipherConfigJson,
+        safeInputText,
+        safeOutputText,
+      ]
     );
 
     // Update user stats
@@ -594,7 +654,23 @@ app.get('/api/history', authenticateToken, async (req, res) => {
       [userId, parseInt(limit)]
     );
     
-    res.json(history);
+    res.json(
+      history.map((row) => {
+        let parsedConfig = null;
+        if (row?.cipher_config) {
+          try {
+            parsedConfig = JSON.parse(row.cipher_config);
+          } catch {
+            parsedConfig = row.cipher_config;
+          }
+        }
+
+        return {
+          ...row,
+          cipher_config: parsedConfig,
+        };
+      })
+    );
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

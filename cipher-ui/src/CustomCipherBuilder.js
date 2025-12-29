@@ -4,9 +4,40 @@
  * @version 1.0.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from './Toast';
 import './CustomCipherBuilder.css';
+
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+const recordCustomCipherHistory = async ({ operation, inputText, outputText, cipherName, mapping, executionTimeMs }) => {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  try {
+    await fetch('http://localhost:3001/api/history', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        cipherType: 'custom',
+        operation,
+        inputLength: typeof inputText === 'string' ? inputText.length : null,
+        executionTime: executionTimeMs,
+        inputText,
+        outputText,
+        cipherConfig: {
+          name: cipherName,
+          mapping,
+        },
+      }),
+    });
+  } catch {
+    // non-blocking
+  }
+};
 
 /**
  * Custom cipher builder component
@@ -17,7 +48,7 @@ import './CustomCipherBuilder.css';
  * @example
  * <CustomCipherBuilder />
  */
-const CustomCipherBuilder = ({ onMappingChange, onNameChange }) => {
+const CustomCipherBuilder = ({ user, onMappingChange, onNameChange }) => {
   /**
    * Alphabet mapping state for custom cipher
    * @type {Object}
@@ -43,20 +74,77 @@ const CustomCipherBuilder = ({ onMappingChange, onNameChange }) => {
    */
   const [cipherName, setCipherName] = useState('My Custom Cipher');
 
-  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const [savedCiphers, setSavedCiphers] = useState([]);
+  const [savedCiphersLoading, setSavedCiphersLoading] = useState(false);
+  const [selectedSavedCipherId, setSelectedSavedCipherId] = useState('');
+
+  const isMountedRef = useRef(true);
+
+  const alphabet = ALPHABET;
 
   /**
    * Initialize default mapping on component mount
    * @function useEffect
    */
   useEffect(() => {
+    isMountedRef.current = true;
     const defaultMapping = {};
     alphabet.forEach(letter => {
       defaultMapping[letter] = letter;
     });
     setMapping(defaultMapping);
     if (onMappingChange) onMappingChange(defaultMapping);
-  }, []);
+
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [alphabet, onMappingChange]);
+
+  const loadSavedCiphers = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!user || !token) {
+      if (isMountedRef.current) {
+        setSavedCiphers([]);
+        setSavedCiphersLoading(false);
+      }
+      return;
+    }
+
+    if (isMountedRef.current) setSavedCiphersLoading(true);
+    try {
+      const res = await fetch('http://localhost:3001/api/ciphers', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || 'Failed to load saved ciphers');
+
+      if (!isMountedRef.current) return;
+      setSavedCiphers(Array.isArray(data) ? data : []);
+    } catch {
+      if (!isMountedRef.current) return;
+      setSavedCiphers([]);
+    } finally {
+      if (isMountedRef.current) setSavedCiphersLoading(false);
+    }
+  }, [user]);
+
+  // Load saved ciphers for logged-in users so they can reuse mappings.
+  useEffect(() => {
+    loadSavedCiphers();
+  }, [loadSavedCiphers]);
+
+  const applySavedCipher = (cipher) => {
+    if (!cipher) return;
+    if (!cipher.mapping || typeof cipher.mapping !== 'object') return;
+
+    setCipherName(cipher.name || 'My Custom Cipher');
+    if (onNameChange) onNameChange(cipher.name || 'My Custom Cipher');
+
+    setMapping(cipher.mapping);
+    if (onMappingChange) onMappingChange(cipher.mapping);
+  };
 
   /**
    * Updates the mapping for a specific letter
@@ -107,9 +195,21 @@ const CustomCipherBuilder = ({ onMappingChange, onNameChange }) => {
       showToast('Please enter text to encrypt', 'warning');
       return;
     }
+    const startedAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     const encrypted = applyCipher(testText, false);
+    const finishedAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const executionTimeMs = Math.max(0, Math.round(finishedAt - startedAt));
     setOutputText(encrypted);
     showToast('Text encrypted with custom cipher!', 'success');
+
+    recordCustomCipherHistory({
+      operation: 'encrypt',
+      inputText: testText,
+      outputText: encrypted,
+      cipherName,
+      mapping,
+      executionTimeMs,
+    });
   };
 
   /**
@@ -121,9 +221,21 @@ const CustomCipherBuilder = ({ onMappingChange, onNameChange }) => {
       showToast('Please enter text to decrypt', 'warning');
       return;
     }
+    const startedAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     const decrypted = applyCipher(testText, true);
+    const finishedAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const executionTimeMs = Math.max(0, Math.round(finishedAt - startedAt));
     setOutputText(decrypted);
     showToast('Text decrypted with custom cipher!', 'success');
+
+    recordCustomCipherHistory({
+      operation: 'decrypt',
+      inputText: testText,
+      outputText: decrypted,
+      cipherName,
+      mapping,
+      executionTimeMs,
+    });
   };
 
   /**
@@ -162,6 +274,17 @@ const CustomCipherBuilder = ({ onMappingChange, onNameChange }) => {
   const saveCipher = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        showToast('Session expired. Please login again.', 'warning');
+        return;
+      }
+
+      const trimmedName = (cipherName || '').trim();
+      if (!trimmedName) {
+        showToast('Please enter a cipher name before saving.', 'warning');
+        return;
+      }
+
       const response = await fetch('http://localhost:3001/api/ciphers', {
         method: 'POST',
         headers: {
@@ -169,16 +292,23 @@ const CustomCipherBuilder = ({ onMappingChange, onNameChange }) => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          name: cipherName,
+          name: trimmedName,
           mapping: mapping
         })
       });
 
-      if (response.ok) {
-        showToast('Custom cipher saved successfully!', 'success');
-      } else {
-        showToast('Failed to save cipher', 'error');
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        showToast(data?.message || 'Failed to save cipher', 'error');
+        return;
       }
+
+      showToast('Custom cipher saved successfully!', 'success');
+      if (data?.id != null) setSelectedSavedCipherId(String(data.id));
+
+      // Refresh dropdown immediately so the saved cipher is accessible without page reload.
+      await loadSavedCiphers();
     } catch (error) {
       showToast('Error saving cipher', 'error');
     }
@@ -324,6 +454,33 @@ const CustomCipherBuilder = ({ onMappingChange, onNameChange }) => {
       </div>
 
       <div className="cipher-name-section">
+        {user && (
+          <div className="previous-ciphers-section">
+            <label>Access previous ciphers:</label>
+            <select
+              className="previous-ciphers-select"
+              aria-label="Access previous ciphers"
+              value={selectedSavedCipherId}
+              disabled={savedCiphersLoading}
+              onChange={(e) => {
+                const nextId = e.target.value;
+                setSelectedSavedCipherId(nextId);
+                const selected = savedCiphers.find((c) => String(c.id) === String(nextId));
+                applySavedCipher(selected);
+              }}
+            >
+              <option value="">
+                {savedCiphersLoading ? 'Loading…' : 'Select a saved cipher'}
+              </option>
+              {savedCiphers.map((cipher) => (
+                <option key={cipher.id} value={String(cipher.id)}>
+                  {cipher.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <label>Cipher Name:</label>
         <input
           type="text"
