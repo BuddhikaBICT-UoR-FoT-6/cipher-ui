@@ -1,3 +1,7 @@
+/**
+ * App session expiry behavior tests.
+ */
+
 import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import { showToast } from './Toast';

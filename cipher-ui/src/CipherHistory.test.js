@@ -1,3 +1,7 @@
+/**
+ * CipherHistory overlay tests.
+ */
+
 import React from 'react';
 import { screen, waitFor } from '@testing-library/react';
 import { renderWithTheme } from './test-utils';

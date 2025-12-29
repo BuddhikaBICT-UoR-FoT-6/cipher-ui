@@ -1,3 +1,8 @@
+/**
+ * RailFencePattern tests.
+ *
+ * Ensures the zigzag chart renders (or not) based on inputs.
+ */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import RailFencePattern from './RailFencePattern';

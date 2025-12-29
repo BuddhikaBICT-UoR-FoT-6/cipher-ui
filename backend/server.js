@@ -1,3 +1,14 @@
+/**
+ * CipherProject Backend API (Express + MySQL).
+ *
+ * Key responsibilities:
+ * - Authentication (JWT), user/admin APIs
+ * - Email OTP flows (registration, password reset, sensitive actions)
+ * - Admin-configurable email settings persisted in DB
+ *   - SMTP password is encrypted at rest (AES-256-GCM)
+ * - Cipher history, saved messages, challenges, badges
+ */
+
 const express = require('express');
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
@@ -34,6 +45,13 @@ const OTP_RESEND_COOLDOWN_SECONDS = Number.parseInt(process.env.OTP_RESEND_COOLD
 const FAILED_LOGIN_EMAIL_COOLDOWN_SECONDS = Number.parseInt(process.env.FAILED_LOGIN_EMAIL_COOLDOWN_SECONDS || '300', 10);
 const EMAIL_PROVIDER = String(process.env.EMAIL_PROVIDER || 'smtp').trim().toLowerCase();
 
+/**
+ * Derive a stable 32-byte key for encrypting secrets stored in the DB.
+ *
+ * - If EMAIL_SETTINGS_ENC_KEY is set:
+ *   - Accept either 64 hex chars (32 bytes) or an arbitrary string (SHA-256 -> 32 bytes).
+ * - Otherwise fall back to JWT_SECRET-derived key (keeps local dev easy).
+ */
 const getEmailSettingsEncryptionKey = () => {
   const raw = String(process.env.EMAIL_SETTINGS_ENC_KEY || '').trim();
   if (raw) {
@@ -43,6 +61,13 @@ const getEmailSettingsEncryptionKey = () => {
   return crypto.createHash('sha256').update(String(process.env.JWT_SECRET || 'cipher_secret_key')).digest();
 };
 
+/**
+ * Encrypt a secret (e.g., SMTP password) for storage.
+ *
+ * Output format: `${ivB64}.${tagB64}.${ciphertextB64}`
+ * - iv: 12 bytes random
+ * - tag: GCM auth tag
+ */
 const encryptSecret = (plaintext) => {
   const plain = String(plaintext || '');
   if (!plain) return '';
@@ -54,6 +79,10 @@ const encryptSecret = (plaintext) => {
   return [iv.toString('base64'), tag.toString('base64'), ciphertext.toString('base64')].join('.');
 };
 
+/**
+ * Decrypt a secret stored via encryptSecret().
+ * Returns empty string if payload is missing/malformed.
+ */
 const decryptSecret = (payload) => {
   const text = String(payload || '').trim();
   if (!text) return '';
@@ -71,6 +100,10 @@ const decryptSecret = (payload) => {
 };
 
 let emailSettingsCache = null;
+/**
+ * Compute the effective email settings, preferring the cached DB-configured values
+ * when email settings are enabled; otherwise fall back to environment variables.
+ */
 const getEffectiveEmailSettings = () => {
   const cached = emailSettingsCache && emailSettingsCache.enabled ? emailSettingsCache : null;
   const provider = (cached?.provider || EMAIL_PROVIDER || 'smtp').trim().toLowerCase();
@@ -89,6 +122,10 @@ const getEffectiveEmailSettings = () => {
   };
 };
 
+/**
+ * Returns true when email sending is configured and safe to attempt.
+ * Ethereal is only allowed for non-production environments.
+ */
 const isEmailConfigured = () => {
   const settings = getEffectiveEmailSettings();
   if (settings.provider === 'ethereal') {
@@ -101,6 +138,11 @@ const isEmailConfigured = () => {
 
 let mailTransporter;
 let etherealAccount;
+/**
+ * Lazily create and cache a Nodemailer transporter.
+ * - provider=ethereal: creates a test account (local dev)
+ * - provider=smtp: uses configured SMTP credentials
+ */
 const getMailTransporter = async () => {
   if (mailTransporter) return mailTransporter;
 

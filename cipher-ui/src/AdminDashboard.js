@@ -1,3 +1,12 @@
+/**
+ * Admin dashboard UI.
+ * - User management (list/create/update/delete)
+ * - System email settings (SMTP/Ethereal) configuration
+ *
+ * Destructive actions use an in-app confirm toast instead of window.confirm so the
+ * UX is consistent and testable.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { showConfirmToast, showToast } from './Toast';
 import './AdminDashboard.css';

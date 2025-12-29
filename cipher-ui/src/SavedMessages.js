@@ -1,3 +1,11 @@
+/**
+ * Saved Messages overlay.
+ *
+ * Major logic:
+ * - Displays user saved/encrypted messages
+ * - Currently placeholder/mock UI (no backend fetch wired in this component)
+ */
+
 import React, { useState, useEffect } from 'react';
 import './SavedMessages.css';
 
@@ -6,7 +14,8 @@ const SavedMessages = ({ user, onClose }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock messages for now
+    // Mock messages for now.
+    // If/when wired to the backend, fetch from /api/saved-messages.
     setMessages([]);
     setLoading(false);
   }, []);

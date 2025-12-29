@@ -1,3 +1,8 @@
+/**
+ * SourceCodeViewer tests.
+ *
+ * Confirms expand/copy behaviors and that clipboard integration is invoked.
+ */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

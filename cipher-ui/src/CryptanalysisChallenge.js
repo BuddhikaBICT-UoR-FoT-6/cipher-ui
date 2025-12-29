@@ -1,7 +1,18 @@
+/**
+ * Cryptanalysis Challenge (20-step run).
+ *
+ * Major logic:
+ * - Loads challenges from the backend, then creates a deterministic 20-step run order
+ * - Persists progress per-user in localStorage so runs can resume after refresh/logout
+ * - Tracks attempts/timing; applies wrong-attempt rules (offer lower difficulty, then reveal)
+ * - Reports attempts to the backend for scoring/badges
+ */
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { showToast } from './Toast';
 import './CryptanalysisChallenge.css';
 
+// Convert difficulty labels into an ordering value (used for run order).
 const difficultyRank = (difficulty) => {
   switch ((difficulty || '').toLowerCase()) {
     case 'easy':
@@ -15,6 +26,7 @@ const difficultyRank = (difficulty) => {
   }
 };
 
+// Build the default run order (max 20 unique steps), easy -> hard.
 const buildDefaultOrderIds = (challengeList) => {
   const list = Array.isArray(challengeList) ? [...challengeList] : [];
   list.sort((a, b) => {
@@ -28,9 +40,11 @@ const buildDefaultOrderIds = (challengeList) => {
   return list.map((c) => c.id).slice(0, 20);
 };
 
+// Per-user storage keys so different users don't overwrite each other's run state.
 const getGameStorageKey = (userId) => (userId ? `cryptanalysisGame:v1:${userId}` : null);
 const getGameHistoryKey = (userId) => (userId ? `cryptanalysisGameHistory:v1:${userId}` : null);
 
+// Defensive parse (avoids throwing if localStorage is corrupted).
 const safeParseJson = (value) => {
   try {
     return JSON.parse(value);
@@ -39,6 +53,7 @@ const safeParseJson = (value) => {
   }
 };
 
+// Lightweight hints by cipher family (doesn't leak the answer).
 const algorithmHint = (cipherType) => {
   switch ((cipherType || '').toLowerCase()) {
     case 'caesar':
@@ -57,6 +72,7 @@ const algorithmHint = (cipherType) => {
   }
 };
 
+// Standardize outcome toasts for consistent UX.
 const normalizeOutcomeToast = (outcome, points) => {
   if (outcome === 'correct') {
     const cheers = ['Brilliant!', 'Nice work!', 'Great decode!', 'Cipher cracked!'];

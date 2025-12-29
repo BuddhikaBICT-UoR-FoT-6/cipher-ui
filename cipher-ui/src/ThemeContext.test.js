@@ -1,3 +1,8 @@
+/**
+ * ThemeContext tests.
+ *
+ * Validates provider requirements and persistence to localStorage.
+ */
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

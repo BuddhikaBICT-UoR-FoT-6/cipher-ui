@@ -1,3 +1,10 @@
+/**
+ * One-off utility script: reactivate a user account directly in the DB.
+ *
+ * Intended for local/admin troubleshooting only.
+ * Usage: run from the backend folder after configuring `.env`.
+ */
+
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
@@ -10,7 +17,8 @@ async function reactivateAccount() {
       database: process.env.DB_NAME || 'cipher_db'
     });
 
-    // Reactivate the account with email Cypher456@gmail.com
+    // Reactivate the account for the specified email.
+    // Change this value if you need to reactivate a different account.
     const [result] = await db.execute(
       'UPDATE users SET is_active = TRUE WHERE email = ?',
       ['Cypher456@gmail.com']

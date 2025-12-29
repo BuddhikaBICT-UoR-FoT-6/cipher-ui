@@ -1,3 +1,12 @@
+/**
+ * Login / Register / Reset Password modal.
+ *
+ * Major logic:
+ * - Supports three modes: login, register (OTP), and password reset (OTP)
+ * - OTP is requested first, then the final action is submitted with OTP
+ * - Handles Escape to close/reset for better UX
+ */
+
 import React, { useEffect, useState } from 'react';
 import { showToast } from './Toast';
 import './Login.css';
@@ -19,6 +28,7 @@ const Login = ({ onLogin, onClose }) => {
   const isRegister = mode === 'register';
   const isReset = mode === 'reset';
 
+  // Reset modal state back to the default login screen.
   const resetToLogin = () => {
     setMode('login');
     setError('');
@@ -26,6 +36,7 @@ const Login = ({ onLogin, onClose }) => {
     setFormData({ username: '', email: '', password: '', otp: '', newPassword: '' });
   };
 
+  // Allow the modal to close via Escape.
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -38,6 +49,7 @@ const Login = ({ onLogin, onClose }) => {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
+  // Step 1 (Register): request an OTP be emailed to the provided address.
   const requestRegisterOtp = async () => {
     const trimmedUsername = String(formData.username || '').trim();
     const trimmedEmail = String(formData.email || '').trim();
@@ -78,6 +90,7 @@ const Login = ({ onLogin, onClose }) => {
     }
   };
 
+  // Step 1 (Reset password): request an OTP for the email (if the account exists).
   const requestResetOtp = async () => {
     const trimmedEmail = String(formData.email || '').trim();
     if (!trimmedEmail) {

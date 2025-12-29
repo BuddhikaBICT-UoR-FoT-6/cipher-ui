@@ -1,3 +1,10 @@
+/**
+ * BruteForceSimulator
+ *
+ * Modal component that estimates brute-force effort for different cipher types.
+ * Uses simple key-space rules (and a configurable key length for Vigenère) to
+ * generate human-readable time estimates and example attack descriptions.
+ */
 import React, { useState, useEffect } from 'react';
 import './BruteForceSimulator.css';
 

@@ -1,3 +1,9 @@
+/**
+ * Jest setup for the React UI.
+ *
+ * Extends matchers via `@testing-library/jest-dom` and polyfills browser APIs
+ * (e.g., clipboard, matchMedia, createObjectURL) that JSDOM may not provide.
+ */
 // jest-dom adds custom jest matchers for asserting on DOM nodes.
 // allows you to do things like:
 // expect(element).toHaveTextContent(/react/i)

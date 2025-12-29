@@ -1,3 +1,9 @@
+/**
+ * Login tests.
+ *
+ * Exercises login/register/reset flows and checks UI state transitions while
+ * mocking network requests.
+ */
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

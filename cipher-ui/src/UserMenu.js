@@ -1,3 +1,12 @@
+/**
+ * User menu overlay.
+ *
+ * Major logic:
+ * - Loads profile stats + badges from `/api/me/profile`
+ * - Supports OTP-protected account lifecycle actions (deactivate/delete)
+ * - Uses a single overlay that can switch between different confirm states
+ */
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { showToast } from './Toast';
 import './UserMenu.css';
@@ -14,6 +23,7 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
 
   const token = useMemo(() => localStorage.getItem('token'), []);
 
+  // Load profile + badge assets when the menu opens for an authenticated user.
   useEffect(() => {
     let isMounted = true;
 
@@ -54,6 +64,7 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
     };
   }, [user, token]);
 
+  // Reset OTP UI state whenever the confirm action changes.
   useEffect(() => {
     setActionOtpSent(false);
     setActionOtp('');
@@ -71,6 +82,7 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
     return map;
   }, [profileBadgeAssets]);
 
+  // Step 1: request an OTP for a sensitive action (deactivate/delete).
   const requestActionOtp = async (action) => {
     try {
       const token = localStorage.getItem('token');
@@ -107,6 +119,7 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
     }
   };
 
+  // Step 2: submit OTP to deactivate the current account.
   const deactivateAccount = async () => {
     try {
       const token = localStorage.getItem('token');

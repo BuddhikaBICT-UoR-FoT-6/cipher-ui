@@ -1,3 +1,8 @@
+/**
+ * React app entry point.
+ *
+ * Mounts the root component and optionally reports Web Vitals metrics.
+ */
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';

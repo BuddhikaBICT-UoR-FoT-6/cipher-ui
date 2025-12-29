@@ -1,3 +1,8 @@
+/**
+ * Toast system tests.
+ *
+ * Covers basic toast rendering/removal and the confirm-toast action behavior.
+ */
 import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

@@ -1,6 +1,17 @@
+/**
+ * Cipher history overlay.
+ *
+ * Major logic:
+ * - Fetches `/api/history` for the current user (JWT required)
+ * - Shows loading/error/empty states
+ * - Truncates long input/output for safe display
+ * - Uses an overlay click-to-close pattern with inner modal stopPropagation
+ */
+
 import React, { useEffect, useMemo, useState } from 'react';
 import './CipherHistory.css';
 
+// Format DB timestamps into a readable local time string.
 const formatWhen = (value) => {
   if (!value) return '';
   const d = new Date(value);
@@ -8,6 +19,7 @@ const formatWhen = (value) => {
   return d.toLocaleString();
 };
 
+// Compact preview of long text fields (keeps UI readable and avoids huge DOM nodes).
 const preview = (value, max = 140) => {
   if (typeof value !== 'string') return '';
   const trimmed = value.trim();
@@ -26,6 +38,8 @@ const CipherHistory = ({ user, onClose }) => {
   useEffect(() => {
     let isMounted = true;
 
+    // Fetch once per user/token change.
+    // isMounted prevents setting state after the overlay is closed/unmounted.
     const fetchHistory = async () => {
       if (!user || !token) {
         setLoading(false);

@@ -1,3 +1,10 @@
+/**
+ * Global toast utility + renderer.
+ *
+ * This module intentionally keeps a module-level toast queue so any component can
+ * call showToast/showConfirmToast without wiring props/context.
+ */
+
 import React, { useState, useEffect } from 'react';
 import './Toast.css';
 
@@ -5,6 +12,7 @@ let toastId = 0;
 const toasts = [];
 let setToastsCallback = null;
 
+// Push to the shared queue and optionally schedule auto-dismiss.
 const pushToast = (toast) => {
   toasts.push(toast);
   if (setToastsCallback) {
@@ -25,6 +33,11 @@ const pushToast = (toast) => {
   }
 };
 
+/**
+ * Show a standard auto-dismissing toast.
+ * @param {string} message
+ * @param {'info'|'success'|'warning'|'error'} [type]
+ */
 export const showToast = (message, type = 'info') => {
   const toast = {
     id: ++toastId,
@@ -37,6 +50,10 @@ export const showToast = (message, type = 'info') => {
   pushToast(toast);
 };
 
+/**
+ * Show a confirmation toast that does not auto-dismiss.
+ * Used for destructive actions (e.g., admin delete user).
+ */
 export const showConfirmToast = ({
   message,
   type = 'warning',
@@ -63,6 +80,9 @@ export const showConfirmToast = ({
   pushToast(toast);
 };
 
+/**
+ * Toast container component. Mount once (e.g., near App root).
+ */
 const Toast = () => {
   const [toastList, setToastList] = useState([]);
 

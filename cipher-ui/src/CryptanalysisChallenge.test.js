@@ -1,3 +1,9 @@
+/**
+ * CryptanalysisChallenge tests.
+ *
+ * Covers the interactive cryptanalysis flow, including state updates and
+ * persistence behavior without relying on real network calls.
+ */
 import React from 'react';
 import { screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

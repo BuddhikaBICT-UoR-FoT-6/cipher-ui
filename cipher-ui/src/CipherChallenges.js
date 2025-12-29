@@ -1,3 +1,10 @@
+/**
+ * Cipher Challenges overlay.
+ *
+ * Note: this component currently uses mock data for the list view.
+ * The interactive 20-step mode is implemented in CryptanalysisChallenge.
+ */
+
 import React, { useState, useEffect } from 'react';
 import './CipherChallenges.css';
 
@@ -6,7 +13,8 @@ const CipherChallenges = ({ user, onClose }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock challenges for now
+    // Mock challenges for now.
+    // If/when this view is wired to the backend, replace this with a fetch call.
     setChallenges([
       {
         id: 1,

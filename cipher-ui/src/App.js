@@ -1,3 +1,13 @@
+/**
+ * App shell for CipherProject UI.
+ *
+ * Major responsibilities:
+ * - Bootstraps theme + global UI (toasts)
+ * - Manages login state (JWT + persisted user)
+ * - Enforces session expiry on the client by reading the JWT exp claim
+ * - Controls top-level overlays (Login/Admin/UserMenu/History)
+ */
+
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from './ThemeContext';
 import CipherApp from './CipherApp';
@@ -8,6 +18,8 @@ import UserMenu from './UserMenu';
 import CipherHistory from './CipherHistory';
 import Toast, { showToast } from './Toast';
 
+// Decode the JWT payload without validating signature.
+// This is used only for UX/session expiry; backend remains the source of truth.
 const decodeJwtPayload = (token) => {
   try {
     const parts = token.split('.');
@@ -22,6 +34,7 @@ const decodeJwtPayload = (token) => {
   }
 };
 
+// Return the token expiry time in milliseconds, or null if missing/invalid.
 const getTokenExpiryMs = (token) => {
   const payload = decodeJwtPayload(token);
   if (!payload || typeof payload.exp !== 'number') return null;
@@ -36,6 +49,7 @@ function App() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
+  // Centralized logout helper: clears persisted auth + resets overlays.
   const forceLogout = (message) => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -51,6 +65,7 @@ function App() {
   useEffect(() => {
     if (!token) return undefined;
 
+    // Check current token expiry and compute the next delay until expiry.
     const checkExpiry = () => {
       const expiryMs = getTokenExpiryMs(token);
 

@@ -1,3 +1,9 @@
+/**
+ * CustomCipherBuilder tests.
+ *
+ * Validates mapping initialization/edit behavior and that callbacks fire when
+ * the user changes the custom cipher definition.
+ */
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

@@ -1,3 +1,9 @@
+/**
+ * UserMenu tests.
+ *
+ * Ensures user profile actions render and that OTP-protected flows call the
+ * expected endpoints and show appropriate feedback.
+ */
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

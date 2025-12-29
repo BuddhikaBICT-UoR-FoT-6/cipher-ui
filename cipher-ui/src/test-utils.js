@@ -1,3 +1,9 @@
+/**
+ * Testing utilities.
+ *
+ * Provides helpers (like `renderWithTheme`) so component tests run under the
+ * same ThemeContext as the real app.
+ */
 import React from 'react';
 import { render } from '@testing-library/react';
 import { ThemeProvider } from './ThemeContext';

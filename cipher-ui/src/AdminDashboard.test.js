@@ -1,3 +1,9 @@
+/**
+ * AdminDashboard tests.
+ *
+ * Verifies admin stats/users rendering and that destructive actions are routed
+ * through the toast-driven confirmation flow.
+ */
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
