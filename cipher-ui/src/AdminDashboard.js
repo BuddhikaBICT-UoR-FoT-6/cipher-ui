@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { showConfirmToast, showToast } from './Toast';
+import { apiUrl } from './apiBase';
 import './AdminDashboard.css';
 
 const AdminDashboard = ({ user, onClose }) => {
@@ -39,7 +40,7 @@ const AdminDashboard = ({ user, onClose }) => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/admin/users', {
+      const response = await fetch(apiUrl('/api/admin/users'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -59,7 +60,7 @@ const AdminDashboard = ({ user, onClose }) => {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/admin/stats', {
+      const response = await fetch(apiUrl('/api/admin/stats'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -77,7 +78,7 @@ const AdminDashboard = ({ user, onClose }) => {
   const addUser = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/admin/users', {
+      const response = await fetch(apiUrl('/api/admin/users'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +105,7 @@ const AdminDashboard = ({ user, onClose }) => {
   const fetchEmailSettings = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/admin/email-settings', {
+      const response = await fetch(apiUrl('/api/admin/email-settings'), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -138,7 +139,7 @@ const AdminDashboard = ({ user, onClose }) => {
         emailFrom: emailSettings.emailFrom,
       };
 
-      const response = await fetch('http://localhost:3001/api/admin/email-settings', {
+      const response = await fetch(apiUrl('/api/admin/email-settings'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -170,7 +171,7 @@ const AdminDashboard = ({ user, onClose }) => {
   const updateUser = async (userId, updates) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3001/api/admin/users/${userId}`, {
+      const response = await fetch(apiUrl(`/api/admin/users/${userId}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +195,7 @@ const AdminDashboard = ({ user, onClose }) => {
   const performDeleteUser = async (userId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3001/api/admin/users/${userId}`, {
+      const response = await fetch(apiUrl(`/api/admin/users/${userId}`), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

@@ -9,6 +9,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { apiUrl } from './apiBase';
 import './CipherHistory.css';
 
 // Format DB timestamps into a readable local time string.
@@ -51,7 +52,7 @@ const CipherHistory = ({ user, onClose }) => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch('http://localhost:3001/api/history', {
+        const res = await fetch(apiUrl('/api/history'), {
           headers: {
             Authorization: `Bearer ${token}`,
           },

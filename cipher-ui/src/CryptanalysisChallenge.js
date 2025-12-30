@@ -10,6 +10,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { showToast } from './Toast';
+import { apiUrl } from './apiBase';
 import './CryptanalysisChallenge.css';
 
 // Convert difficulty labels into an ordering value (used for run order).
@@ -131,7 +132,7 @@ const CryptanalysisChallenge = ({ user, onClose }) => {
 
       setLoading(true);
       try {
-        const res = await fetch('http://localhost:3001/api/challenges', {
+        const res = await fetch(apiUrl('/api/challenges'), {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -296,7 +297,7 @@ const CryptanalysisChallenge = ({ user, onClose }) => {
   const applyLowerDifficulty = () => {
     (async () => {
       try {
-        const res = await fetch('http://localhost:3001/api/challenges/generate-easy', {
+        const res = await fetch(apiUrl('/api/challenges/generate-easy'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -439,7 +440,7 @@ const CryptanalysisChallenge = ({ user, onClose }) => {
 
   const revealActiveAnswer = async () => {
     if (!active) return null;
-    const res = await fetch(`http://localhost:3001/api/challenges/${active.id}/reveal`, {
+    const res = await fetch(apiUrl(`/api/challenges/${active.id}/reveal`), {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
     const data = await res.json();
@@ -464,7 +465,7 @@ const CryptanalysisChallenge = ({ user, onClose }) => {
     const timeTakenSeconds = Math.max(0, Math.round((Date.now() - startedAt) / 1000));
 
     try {
-      const res = await fetch('http://localhost:3001/api/challenges/attempt', {
+      const res = await fetch(apiUrl('/api/challenges/attempt'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

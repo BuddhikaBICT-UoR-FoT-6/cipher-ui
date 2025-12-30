@@ -9,6 +9,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { showToast } from './Toast';
+import { API_BASE_URL, apiUrl } from './apiBase';
 import './Login.css';
 
 const Login = ({ onLogin, onClose }) => {
@@ -63,7 +64,7 @@ const Login = ({ onLogin, onClose }) => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:3001/api/auth/register/request-otp', {
+      const response = await fetch(apiUrl('/api/auth/register/request-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -103,7 +104,7 @@ const Login = ({ onLogin, onClose }) => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:3001/api/auth/forgot-password/request-otp', {
+      const response = await fetch(apiUrl('/api/auth/forgot-password/request-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: trimmedEmail }),
@@ -167,7 +168,7 @@ const Login = ({ onLogin, onClose }) => {
           }
         : formData;
 
-      const response = await fetch(`http://localhost:3001${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

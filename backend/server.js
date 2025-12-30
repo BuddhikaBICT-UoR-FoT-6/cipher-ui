@@ -32,9 +32,14 @@ app.use('/badges', express.static(path.join(__dirname, '..', 'src', 'main', 'bad
 // Database connection
 const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT ? Number.parseInt(String(process.env.DB_PORT), 10) : 3306,
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'cipher_db'
+  database: process.env.DB_NAME || 'cipher_db',
+  ssl:
+    String(process.env.DB_SSL || '').trim().toLowerCase() === 'true'
+      ? { rejectUnauthorized: String(process.env.DB_SSL_REJECT_UNAUTHORIZED || 'true').trim().toLowerCase() !== 'false' }
+      : undefined,
 };
 
 let db;
@@ -419,14 +424,22 @@ const verifyOtp = async ({ email, purpose, otp }) => {
 async function initDatabase() {
   try {
     // Create database if it doesn't exist
-    const connection = await mysql.createConnection({
-      host: dbConfig.host,
-      user: dbConfig.user,
-      password: dbConfig.password
-    });
-    
-    await connection.execute(`CREATE DATABASE IF NOT EXISTS ${dbConfig.database}`);
-    await connection.end();
+    try {
+      const connection = await mysql.createConnection({
+        host: dbConfig.host,
+        port: dbConfig.port,
+        user: dbConfig.user,
+        password: dbConfig.password,
+        ssl: dbConfig.ssl,
+      });
+
+      await connection.execute(`CREATE DATABASE IF NOT EXISTS ${dbConfig.database}`);
+      await connection.end();
+    } catch (e) {
+      // Some hosted providers (or limited users) do not allow CREATE DATABASE.
+      // In that case, assume the DB already exists and continue.
+      console.warn('Skipping CREATE DATABASE step:', e?.message || e);
+    }
     
     // Connect to the database
     db = await mysql.createConnection(dbConfig);

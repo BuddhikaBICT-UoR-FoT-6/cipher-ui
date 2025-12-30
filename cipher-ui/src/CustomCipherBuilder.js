@@ -6,6 +6,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { showToast } from './Toast';
+import { apiUrl } from './apiBase';
 import './CustomCipherBuilder.css';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -15,7 +16,7 @@ const recordCustomCipherHistory = async ({ operation, inputText, outputText, cip
   if (!token) return;
 
   try {
-    await fetch('http://localhost:3001/api/history', {
+    await fetch(apiUrl('/api/history'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -112,7 +113,7 @@ const CustomCipherBuilder = ({ user, onMappingChange, onNameChange }) => {
 
     if (isMountedRef.current) setSavedCiphersLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/ciphers', {
+      const res = await fetch(apiUrl('/api/ciphers'), {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -285,7 +286,7 @@ const CustomCipherBuilder = ({ user, onMappingChange, onNameChange }) => {
         return;
       }
 
-      const response = await fetch('http://localhost:3001/api/ciphers', {
+      const response = await fetch(apiUrl('/api/ciphers'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

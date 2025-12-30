@@ -12,6 +12,7 @@ import BruteForceSimulator from './BruteForceSimulator';
 import RailFencePattern from './RailFencePattern';
 import CryptanalysisChallenge from './CryptanalysisChallenge';
 import { showToast } from './Toast';
+import { apiUrl } from './apiBase';
 import './CipherApp.css';
 
 const recordCipherHistory = async ({
@@ -27,7 +28,7 @@ const recordCipherHistory = async ({
   if (!token) return;
 
   try {
-    await fetch('http://localhost:3001/api/history', {
+    await fetch(apiUrl('/api/history'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

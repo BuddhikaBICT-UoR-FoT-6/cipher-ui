@@ -9,6 +9,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { showToast } from './Toast';
+import { API_BASE_URL, apiUrl } from './apiBase';
 import './UserMenu.css';
 
 const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
@@ -30,7 +31,7 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
     const fetchProfile = async () => {
       setProfileLoading(true);
       try {
-        const res = await fetch('http://localhost:3001/api/me/profile', {
+        const res = await fetch(apiUrl('/api/me/profile'), {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -93,8 +94,8 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
 
       setActionOtpLoading(true);
       const endpoint = action === 'deactivate'
-        ? 'http://localhost:3001/api/user/deactivate/request-otp'
-        : 'http://localhost:3001/api/user/delete/request-otp';
+        ? apiUrl('/api/user/deactivate/request-otp')
+        : apiUrl('/api/user/delete/request-otp');
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -134,7 +135,7 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
         return;
       }
 
-      const response = await fetch('http://localhost:3001/api/user/deactivate', {
+      const response = await fetch(apiUrl('/api/user/deactivate'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +173,7 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
         return;
       }
 
-      const response = await fetch('http://localhost:3001/api/user/delete', {
+      const response = await fetch(apiUrl('/api/user/delete'), {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -242,7 +243,7 @@ const UserMenu = ({ user, onLogout, onShowHistory, onClose }) => {
                           {src ? (
                             <img
                               className={`badge-img ${earned ? '' : 'badge-img--locked'}`}
-                              src={`http://localhost:3001${src}`}
+                              src={`${API_BASE_URL}${src}`}
                               alt={alt}
                               loading="lazy"
                             />
