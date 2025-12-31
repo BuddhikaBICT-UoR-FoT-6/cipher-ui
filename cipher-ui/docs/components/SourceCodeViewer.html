@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SourceCodeViewer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #2c3e50;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        h2 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 4px solid #667eea;
+            margin: 0;
+            padding-left: 20px;
+            color: #666;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 style="color: white; border: none; margin: 0;">SourceCodeViewer</h1>
+        <p style="margin: 10px 0 0 0;">Cipher Project Documentation</p>
+    </div>
+    <h1>SourceCodeViewer Documentation</h1><br><br><h2>Overview</h2><br>Component for displaying Java source code with syntax highlighting<br><br><h2>Project Information</h2><br>- <strong>Project:</strong> Cipher Algorithms Implementation<br>- <strong>Version:</strong> 1.0.0<br>- <strong>Author:</strong> Cipher Project Team<br>- <strong>File:</strong> <code>src/SourceCodeViewer.js</code><br><br>---<br><br><h2>Constants</h2><br><br><dl><br><dt><a href="#sourceCode">sourceCode</a> : <code>Object</code></dt><br><dd><p>Contains complete Java implementation source code for each cipher algorithm</p><br></dd><br></dl><br><br><h2>Functions</h2><br><br><dl><br><dt><a href="#SourceCodeViewer">SourceCodeViewer(props)</a> ⇒ <code>JSX.Element</code></dt><br><dd><p>Displays Java source code for cipher algorithms with syntax highlighting, copy functionality, and expandable interface</p><br></dd><br><dt><a href="#handleCopyCode">handleCopyCode()</a> ⇒ <code>void</code></dt><br><dd><p>Uses the Clipboard API to copy Java source code to user&#39;s clipboard</p><br></dd><br></dl><br><br><a name="sourceCode"></a><br><br><h2>sourceCode : <code>Object</code></h2><br>Contains complete Java implementation source code for each cipher algorithm<br><br><strong>Kind</strong>: global constant  <br><strong>Properties</strong><br><br>| Name | Type | Description |<br>| --- | --- | --- |<br>| caesar | <code>string</code> | Caesar cipher Java source code |<br>| rot13 | <code>string</code> | ROT13 cipher Java source code |<br>| atbash | <code>string</code> | Atbash cipher Java source code |<br>| vigenere | <code>string</code> | Vigenère cipher Java source code |<br>| railfence | <code>string</code> | Rail Fence cipher Java source code |<br><br><a name="SourceCodeViewer"></a><br><br><h2>SourceCodeViewer(props) ⇒ <code>JSX.Element</code></h2><br>Displays Java source code for cipher algorithms with syntax highlighting, copy functionality, and expandable interface<br><br><strong>Kind</strong>: global function  <br><strong>Returns</strong>: <code>JSX.Element</code> - Collapsible source code viewer with copy-to-clipboard functionality  <br><strong>Component</strong>:   <br><br>| Param | Type | Description |<br>| --- | --- | --- |<br>| props | <code>Object</code> | Component properties |<br>| props.selectedCipher | <code>string</code> | Currently selected cipher algorithm key |<br><br><strong>Example</strong>  <br><pre><code>js<br><SourceCodeViewer selectedCipher="caesar" /><br><SourceCodeViewer selectedCipher="vigenere" /><br></code></pre><br><a name="handleCopyCode"></a><br><br><h2>handleCopyCode() ⇒ <code>void</code></h2><br>Uses the Clipboard API to copy Java source code to user's clipboard<br><br><strong>Kind</strong>: global function  <br><br><br>---<br><br><h2>Usage in Project</h2><br>This component is part of the Cipher Project React application that provides a user interface for various encryption and decryption algorithms including Caesar, ROT13, Atbash, Vigenère, and Rail Fence ciphers.<br><br><h2>Related Components</h2><br>- CipherApp<br>- AlgorithmInfo<br>- ThemeToggle<br>- ThemeContext<br>
+    <div class="footer">
+        <p>Generated on 11/21/2025 | Cipher Project v1.0.0</p>
+    </div>
+</body>
+</html>

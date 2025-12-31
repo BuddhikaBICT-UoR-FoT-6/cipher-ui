@@ -1,0 +1,19 @@
+﻿# Dependencies
+node_modules/
+backend/node_modules/
+cipher-ui/node_modules/
+
+# Env / secrets
+**/.env
+
+# Builds
+cipher-ui/build/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Java build artifacts
+*.class
+

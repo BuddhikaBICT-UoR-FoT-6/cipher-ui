@@ -1,0 +1,16 @@
+{
+  "source": {
+    "include": ["./src/"],
+    "includePattern": "\\.(js|jsx)$",
+    "exclude": ["node_modules/", "build/", "public/"]
+  },
+  "opts": {
+    "destination": "./docs/jsdoc/",
+    "recurse": true
+  },
+  "plugins": ["plugins/markdown"],
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false
+  }
+}

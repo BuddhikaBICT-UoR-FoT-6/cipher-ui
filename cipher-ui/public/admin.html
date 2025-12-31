@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="description" content="Admin Dashboard for Cipher Project" />
+  <title>Admin Dashboard - Cipher Project</title>
+</head>
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+  <div id="admin-root"></div>
+  <script>
+    // Simple admin dashboard loader
+    const token = localStorage.getItem('token');
+    if (!token) {
+      document.body.innerHTML = '<div style="text-align:center;padding:50px;font-family:Arial;">Please login first</div>';
+    } else {
+      // Load admin dashboard component
+      window.location.href = '/?admin=true';
+    }
+  </script>
+</body>
+</html>

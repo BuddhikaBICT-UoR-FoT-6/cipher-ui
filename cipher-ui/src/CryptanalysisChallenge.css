@@ -1,0 +1,213 @@
+.cryptanalysis-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.cryptanalysis-modal {
+  width: min(900px, 92vw);
+  max-height: 88vh;
+  overflow: auto;
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.dark-theme .cryptanalysis-modal {
+  background: #141824;
+  color: #e9ecf1;
+}
+
+.light-theme .cryptanalysis-modal {
+  background: #ffffff;
+  color: #1f2937;
+}
+
+.cryptanalysis-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cryptanalysis-header h2 {
+  margin: 0;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  font-size: 26px;
+  cursor: pointer;
+  color: inherit;
+}
+
+.loading,
+.empty-state {
+  padding: 18px;
+}
+
+.challenge-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.meta-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.badge {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.light-theme .badge {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.difficulty-easy {
+  opacity: 0.9;
+}
+
+.difficulty-medium {
+  opacity: 0.9;
+}
+
+.difficulty-hard {
+  opacity: 0.9;
+}
+
+.challenge-desc {
+  margin-top: 0;
+}
+
+.label {
+  display: block;
+  font-weight: 600;
+  margin: 10px 0 6px;
+}
+
+.ciphertext {
+  margin: 0;
+  padding: 12px;
+  border-radius: 10px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.light-theme .ciphertext {
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.hint {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+}
+
+.light-theme .hint {
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+.answer-input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: transparent;
+  color: inherit;
+}
+
+.light-theme .answer-input {
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.btn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.submit-btn {
+  background: #2ecc71;
+  color: #0b1220;
+}
+
+.next-btn {
+  background: #667eea;
+  color: #0b1220;
+}
+
+.btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.result {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.result.correct {
+  border: 1px solid rgba(46, 204, 113, 0.6);
+}
+
+.result.incorrect {
+  border: 1px solid rgba(255, 107, 107, 0.6);
+}
+
+.points {
+  margin-left: 6px;
+  font-weight: 700;
+}
+
+.challenge-toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin: 10px 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(102, 126, 234, 0.12);
+}
+
+.light-theme .challenge-toast {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(102, 126, 234, 0.10);
+}
+
+.challenge-toast__msg {
+  font-weight: 600;
+}
+
+.challenge-toast__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}

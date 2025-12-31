@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CipherApp</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #2c3e50;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+        h1 {
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        h2 {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        blockquote {
+            border-left: 4px solid #667eea;
+            margin: 0;
+            padding-left: 20px;
+            color: #666;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 style="color: white; border: none; margin: 0;">CipherApp</h1>
+        <p style="margin: 10px 0 0 0;">Cipher Project Documentation</p>
+    </div>
+    <h1>CipherApp Documentation</h1><br><br><h2>Overview</h2><br>Main cipher application component with encryption/decryption functionality<br><br><h2>Project Information</h2><br>- <strong>Project:</strong> Cipher Algorithms Implementation<br>- <strong>Version:</strong> 1.0.0<br>- <strong>Author:</strong> Cipher Project Team<br>- <strong>File:</strong> <code>src/CipherApp.js</code><br><br>---<br><br><h2>Functions</h2><br><br><dl><br><dt><a href="#CipherApp">CipherApp()</a> ⇒ <code>JSX.Element</code></dt><br><dd><p>Provides UI for encrypting and decrypting text using various cipher algorithms including Caesar, ROT13, Atbash, Vigenère, and Rail Fence ciphers</p><br></dd><br><dt><a href="#handleEncrypt">handleEncrypt()</a> ⇒ <code>Promise.&lt;void&gt;</code></dt><br><dd><p>Processes text encryption with visual feedback, animations, and parameter validation</p><br></dd><br><dt><a href="#handleDecrypt">handleDecrypt()</a> ⇒ <code>Promise.&lt;void&gt;</code></dt><br><dd><p>Processes text decryption with visual feedback, animations, and parameter validation</p><br></dd><br><dt><a href="#useEffect">useEffect(callback, dependencies)</a></dt><br><dd><p>Automatically removes animation class after 1 second to reset animation state</p><br></dd><br></dl><br><br><a name="CipherApp"></a><br><br><h2>CipherApp() ⇒ <code>JSX.Element</code></h2><br>Provides UI for encrypting and decrypting text using various cipher algorithms including Caesar, ROT13, Atbash, Vigenère, and Rail Fence ciphers<br><br><strong>Kind</strong>: global function  <br><strong>Returns</strong>: <code>JSX.Element</code> - The main cipher application interface with theme support and animations  <br><strong>Component</strong>:   <br><strong>Example</strong>  <br><pre><code>js<br>// Usage in App.js<br><CipherApp /><br></code></pre><br><a name="handleEncrypt"></a><br><br><h2>handleEncrypt() ⇒ <code>Promise.&lt;void&gt;</code></h2><br>Processes text encryption with visual feedback, animations, and parameter validation<br><br><strong>Kind</strong>: global function  <br><strong>Returns</strong>: <code>Promise.&lt;void&gt;</code> - Promise that resolves when encryption is complete  <br><strong>Throws</strong>:<br><br>- <code>Error</code> When invalid parameters are provided for specific ciphers<br><br><a name="handleDecrypt"></a><br><br><h2>handleDecrypt() ⇒ <code>Promise.&lt;void&gt;</code></h2><br>Processes text decryption with visual feedback, animations, and parameter validation<br><br><strong>Kind</strong>: global function  <br><strong>Returns</strong>: <code>Promise.&lt;void&gt;</code> - Promise that resolves when decryption is complete  <br><strong>Throws</strong>:<br><br>- <code>Error</code> When invalid parameters are provided for specific ciphers<br><br><a name="useEffect"></a><br><br><h2>useEffect(callback, dependencies)</h2><br>Automatically removes animation class after 1 second to reset animation state<br><br><strong>Kind</strong>: global function  <br><br>| Param | Type | Description |<br>| --- | --- | --- |<br>| callback | <code>function</code> | Cleanup function for animation timer |<br>| dependencies | <code>Array</code> | Dependencies array containing animateResult state |<br><br><br><br>---<br><br><h2>Usage in Project</h2><br>This component is part of the Cipher Project React application that provides a user interface for various encryption and decryption algorithms including Caesar, ROT13, Atbash, Vigenère, and Rail Fence ciphers.<br><br><h2>Related Components</h2><br>- AlgorithmInfo<br>- SourceCodeViewer<br>- ThemeToggle<br>- ThemeContext<br>
+    <div class="footer">
+        <p>Generated on 11/21/2025 | Cipher Project v1.0.0</p>
+    </div>
+</body>
+</html>
