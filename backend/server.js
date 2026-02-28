@@ -26,16 +26,17 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Serve badge images (stored in repo under src/main/badges)
-app.use('/badges', express.static(path.join(__dirname, '..', 'src', 'main', 'badges')));
+// Serve badge images (moved to backend/public/badges for portability)
+app.use('/badges', express.static(path.join(__dirname, 'public', 'badges')));
 
-// Database connection
+// Database connection configuration
+// Support both standard DB_* and Railway-specific MYSQL* environment variables
 const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT ? Number.parseInt(String(process.env.DB_PORT), 10) : 3306,
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'cipher_db',
+  host: process.env.MYSQLHOST || process.env.DB_HOST || 'localhost',
+  port: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
+  user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
+  password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '',
+  database: process.env.MYSQLDATABASE || process.env.DB_NAME || 'cipher_db',
   ssl:
     String(process.env.DB_SSL || '').trim().toLowerCase() === 'true'
       ? { rejectUnauthorized: String(process.env.DB_SSL_REJECT_UNAUTHORIZED || 'true').trim().toLowerCase() !== 'false' }
